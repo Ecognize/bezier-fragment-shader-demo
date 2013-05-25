@@ -27,15 +27,6 @@ struct camera
     double dist;
 } Camera = { M_PI/4,0.0,1500.0 };
 
-
-void mouse(int b, int x, int y)
-{
-    if (b==3 || b==4)
-    {
-        Camera.dist*= (b==4)? 1.1 : 0.9;
-    }
-}
-
 void motion(int x, int y)
 {
     static int mx=-1,my=-1;
@@ -277,20 +268,20 @@ void keyb(unsigned char key,int mx,int my)
     GLint loc;
     switch (key)
     {
-        case 'c': case 'C': fillCutPart=!fillCutPart;
+        case SDL_SCANCODE_C: fillCutPart=!fillCutPart;
             loc=glGetUniformLocation(program,"fillCutPart");
             glProgramUniform1i(program,loc,fillCutPart);
             break;
-        case 'f': case 'F': drawFill=!drawFill;
+        case SDL_SCANCODE_F: drawFill=!drawFill;
             loc=glGetUniformLocation(program,"drawFill");
             glProgramUniform1i(program,loc,drawFill);
             break;
-        case 's': case 'S': drawStroke=!drawStroke;
+        case SDL_SCANCODE_S: drawStroke=!drawStroke;
             loc=glGetUniformLocation(program,"drawStroke");
             glProgramUniform1i(program,loc,drawStroke);
             break;
-        case '-': Camera.dist*= 1.1; break;
-        case '+': Camera.dist*= 0.9; break;
+        case SDL_SCANCODE_Z: Camera.dist*= 1.1; break;
+        case SDL_SCANCODE_X: Camera.dist*= 0.9; break;
     }
 }
 
@@ -309,7 +300,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    window = SDL_CreateWindow("Bezier Fragment Shader Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 700, 700, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+    width = 700;
+    height = 700;
+
+    window = SDL_CreateWindow("Bezier Fragment Shader Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 
     if(window == NULL)
     {
@@ -328,7 +322,7 @@ int main(int argc, char *argv[])
     SDL_GL_MakeCurrent(window, glcontext);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-    glViewport(0, 0, 700, 700);
+    glViewport(0, 0, width, height);
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
 
@@ -368,7 +362,7 @@ int main(int argc, char *argv[])
 
     while(running)
     {
-        SDL_PollEvent(&event);
+        SDL_WaitEvent(&event);
 
         switch(event.type)
         {
@@ -384,17 +378,17 @@ int main(int argc, char *argv[])
                 }
             break;
 
-            case SDL_MOUSEBUTTONDOWN:
-                mouse(event.button.button, event.button.x, event.button.y);
+            case SDL_MOUSEWHEEL:
+                Camera.dist*= (event.wheel.y < 0)? 1.1 : 0.9;
             break;
 
             case SDL_MOUSEMOTION:
                 motion(event.motion.x, event.motion.y);
             break;
 
-//             case SDL_VIDEORESIZE:
-//                 size(event.x, event.y);
-//             break;
+            case SDL_WINDOWEVENT_RESIZED:
+                size(event.window.data1, event.window.data2);
+            break;
 
             case SDL_QUIT:
                 running = 0;
