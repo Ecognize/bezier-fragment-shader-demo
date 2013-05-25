@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <SDL_config.h>
 #include <SDL.h>
 #ifdef GLES
 #include <SDL_opengles2.h>
@@ -312,7 +313,7 @@ int main(int argc, char *argv[])
 
     if(window == NULL)
     {
-        perror("Can't create window: %s", SDL_GetError());
+        fprintf(stderr,"Can't create window: %s\n", SDL_GetError());
         return -1;
     }
 
@@ -320,7 +321,7 @@ int main(int argc, char *argv[])
 
     if(glcontext == NULL)
     {
-        perror("Can't create context: %s", SDL_GetError());
+        fprintf(stderr,"Can't create context: %s\n", SDL_GetError());
         return -1;
     }
 
@@ -338,7 +339,7 @@ int main(int argc, char *argv[])
 
     if (! shader)
     {
-        perror("Can't create context: %s", SDL_GetError());
+        fprintf(stderr,"Can't create context: %s\n", SDL_GetError());
         return -1;
     }
 
@@ -379,7 +380,7 @@ int main(int argc, char *argv[])
                     case SDLK_RIGHT:  Camera.beta -= M_PI / 36; break;
                     case SDLK_UP:    Camera.alpha += M_PI / 36; break;
                     case SDLK_DOWN:  Camera.alpha -= M_PI / 36; break;
-                    default: keyb(event.key.keysym.scancode);   break;
+                    default: keyb(event.key.keysym.scancode,0,0);   break; // WARNING: passing zeroes
                 }
             break;
 
@@ -391,9 +392,9 @@ int main(int argc, char *argv[])
                 motion(event.motion.x, event.motion.y);
             break;
 
-            case SDL_VIDEORESIZE:
-                size(event.x, event.y);
-            break;
+//             case SDL_VIDEORESIZE:
+//                 size(event.x, event.y);
+//             break;
 
             case SDL_QUIT:
                 running = 0;
