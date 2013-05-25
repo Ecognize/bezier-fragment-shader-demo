@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project(bezier-fragshader)
-find_package(OpenGL REQUIRED)
-find_package(SDL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIR} ${SDL_INCLUDE_DIR})
+
+set(SDL_STATIC ON CACHE BOOL "Build a static version of the library" FORCE)  # SDL doesn't a fuck
+add_subdirectory(SDL)
+
 add_definitions(-DDATADIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
 add_executable(bezier-fragshader bezier-fragshader.c)
 target_link_libraries(bezier-fragshader ${OPENGL_LIBRARIES} ${SDL_LIBRARY})
