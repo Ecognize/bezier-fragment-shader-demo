@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 2.8)
+project(bezier-fragshader)
+find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
+include_directories(${GLUT_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
+add_definitions(-DDATADIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
+add_executable(bezier-fragshader bezier-fragshader.c)
+target_link_libraries(bezier-fragshader ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES})
