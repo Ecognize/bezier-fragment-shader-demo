@@ -81,20 +81,21 @@ void camera()
 
 void draw()
 {
+    static GLfloat vertices[] = 
+        { 1.0,0.0,0.0, 0.0,0.0,1.0, 0.0,1.0,0.0 };
+    static GLfloat texcoords[] =
+        { 0.0,0.0, 0.5,0.0, 1.0,1.0 };
+    
+    
     glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);   
     camera();
     glPushMatrix();
         glTranslatef(0.0,-50.0,0.0);
         glScalef(150.0,150.0,150.0);
         glColor3f(1.0,1.0,1.0);
-        glBegin(GL_TRIANGLES);
-            glTexCoord2f(0.0,0.0);
-            glVertex3f(1.0,0.0,0.0);
-            glTexCoord2f(0.5,0.0);
-            glVertex3f(0.0,0.0,1.0);
-            glTexCoord2f(1.0,1.0);
-            glVertex3f(0.0,1.0,0.0);
-        glEnd();
+        glVertexPointer(3,GL_FLOAT,0,vertices);
+        glTexCoordPointer(2,GL_FLOAT,0,texcoords);
+        glDrawArrays(GL_TRIANGLES,0,3);
     glPopMatrix();
     glutSwapBuffers();
 }
@@ -176,6 +177,9 @@ int main(int argc,char *argv[])
     glProgramUniform1i(program,loc,1);
     loc=glGetUniformLocation(program,"drawStroke");
     glProgramUniform1i(program,loc,1);
+    
+    glEnableClientState(GL_VERTEX_ARRAY); // Why don't they work like glEnable(A|B) did before? or am I dumb?
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
     glutReshapeFunc(size);
     glutDisplayFunc(draw);
