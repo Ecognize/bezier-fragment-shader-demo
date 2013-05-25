@@ -10,10 +10,6 @@
 #include <SDL_opengl.h>
 #endif
 
-
-short drawPoints = 0;
-unsigned dlist   = 0;
-
 SDL_Event         event;
 SDL_Window*      window;
 SDL_GLContext glcontext;
@@ -278,7 +274,6 @@ void keyb(unsigned char key,int mx,int my)
 {
     static short fillCutPart = 0, drawFill = 1, drawStroke = 1;
     GLint loc;
-//     static short wireframe=0,normals=0;
     switch (key)
     {
         case 'c': case 'C': fillCutPart=!fillCutPart;
@@ -296,7 +291,6 @@ void keyb(unsigned char key,int mx,int my)
         case '-': Camera.dist*= 1.1; break;
         case '+': Camera.dist*= 0.9; break;
     }
-
 }
 
 void size(int w, int h)

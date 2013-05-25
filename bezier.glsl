@@ -4,7 +4,7 @@ uniform bool fillCutPart;
 
 void main (void)  
 {
-    if (drawStroke && abs(pow(gl_TexCoord[0].s,2)-gl_TexCoord[0].t)<0.1)
+    if (drawStroke && abs(pow(gl_TexCoord[0].s,2)-gl_TexCoord[0].t)<0.01)
     {
         gl_FragColor = vec4(1.0,1.0,1.0,1.0);  
     }
