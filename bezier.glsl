@@ -6,7 +6,7 @@ void main (void)
 {
     if (drawStroke && abs(pow(gl_TexCoord[0].s,2)-gl_TexCoord[0].t)<0.01)
     {
-        gl_FragColor = vec4(0.45,0.15,0.15,1.0);  
+        gl_FragColor = vec4(1.0,1.0,1.0,1.0);  
     }
     else if (pow(gl_TexCoord[0].s,2)-gl_TexCoord[0].t>0)
     {
@@ -18,7 +18,7 @@ void main (void)
     else
     {
         if (drawFill)
-            gl_FragColor = vec4(1.0,1.0,1.0,1.0);  
+            gl_FragColor = vec4(0.65,0.15,0.15,1.0); 
         else
             discard;
     }
