@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
             break;
 
             case SDL_MOUSEMOTION:
-                motion(event.motion.xrel, event.motion.yrel);
+                if(event.motion.state == 1) motion(event.motion.xrel, event.motion.yrel);
             break;
 
             case SDL_WINDOWEVENT_RESIZED:
