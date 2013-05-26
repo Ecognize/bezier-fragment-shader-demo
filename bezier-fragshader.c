@@ -61,12 +61,25 @@ GLuint loadShader(char *path,GLenum shaderType)
     fclose(fp);
 
     GLuint shader=glCreateShader(shaderType);
+
+#ifndef ANDROID
     glShaderSourceARB(shader,1,&shText,&fsz);
     glCompileShaderARB(shader);
+#else
+    glShaderSource(shader,1,&shText,&fsz);
+    glCompileShader(shader);
+#endif
+
     free(shText);
 
     GLint compiled;
+
+#ifndef ANDROID
     glGetObjectParameterivARB(shader,GL_COMPILE_STATUS,&compiled);
+#else
+    glGetProgramiv(shader,GL_COMPILE_STATUS,&compiled);
+#endif
+
     if (!compiled)
     {
         GLchar buf[4096];
@@ -87,7 +100,13 @@ void camera()
         Camera.dist*cos(Camera.alpha)*cos(Camera.beta),Camera.dist*sin(Camera.alpha),Camera.dist*cos(Camera.alpha)*sin(Camera.beta),
         0.0,0.0,0.0,0.0,cos(Camera.alpha)>0?1.0:-1.0,0.0));
     GLint loc=glGetUniformLocation(program,"projMatrix");
+
+#ifndef ANDROID
     glProgramUniformMatrix4fv(program,loc,1,0,proj.data);
+#else
+    glGetProgramiv(program,loc,proj.data);
+#endif
+
 }
 
 void draw()
@@ -269,8 +288,17 @@ void draw()
     struct GLMatrix model=getGLRotateMatrix(M_PI/2.0,1.0,0.0,0.0);
     model=getGLMatrixProduct(model,getGLTranslateMatrix(-450.0,-550.0,0.0));
     GLint loc=glGetUniformLocation(program,"modelMatrix");
+
+#ifndef ANDROID
     glProgramUniformMatrix4fv(program,loc,1,0,model.data);
+#else
+    glGetProgramiv(program,loc,model.data);
+#endif
+
+
+#ifndef ANDROID
     glColor3f(1.0,1.0,1.0);
+#endif
     glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,vertices);
     glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,texcoords);
     glEnableVertexAttribArray(0);
@@ -286,15 +314,33 @@ void keyb(unsigned char key)
     {
         case SDL_SCANCODE_C: fillCutPart=!fillCutPart;
             loc=glGetUniformLocation(program,"fillCutPart");
-            glProgramUniform1i(program,loc,fillCutPart);
+
+            #ifndef ANDROID
+                glProgramUniform1i(program,loc,fillCutPart);
+            #else
+                glUniform1i(loc, fillCutPart);
+            #endif
+
             break;
         case SDL_SCANCODE_F: drawFill=!drawFill;
             loc=glGetUniformLocation(program,"drawFill");
-            glProgramUniform1i(program,loc,drawFill);
+
+            #ifndef ANDROID
+                glProgramUniform1i(program,loc,drawFill);
+            #else
+                glUniform1i(loc, drawFill);
+            #endif
+
             break;
         case SDL_SCANCODE_S: drawStroke=!drawStroke;
             loc=glGetUniformLocation(program,"drawStroke");
-            glProgramUniform1i(program,loc,drawStroke);
+
+            #ifndef ANDROID
+                glProgramUniform1i(program,loc,drawStroke);
+            #else
+                glUniform1i(loc, drawStroke);
+            #endif
+
             break;
         case SDL_SCANCODE_Z: Camera.dist*= 1.1; break;
         case SDL_SCANCODE_X: Camera.dist*= 0.9; break;
@@ -349,10 +395,6 @@ int main(int argc, char *argv[])
 
     glEnable(GL_DEPTH_TEST);
 
-#ifndef ANDROID
-    glShadeModel(GL_SMOOTH);
-#endif
-
     fshader = loadShader("bezier.glsl",GL_FRAGMENT_SHADER);
     vshader = loadShader("bezier-vertex.glsl",GL_VERTEX_SHADER);
 
@@ -377,9 +419,19 @@ int main(int argc, char *argv[])
 
     glUseProgram(program);
     loc = glGetUniformLocation(program, "drawFill");
+#ifndef ANDROID
     glProgramUniform1i(program, loc, 1);
+#else
+    glUniform1i(loc, 1);
+#endif
+
     loc = glGetUniformLocation(program, "drawStroke");
+
+#ifndef ANDROID
     glProgramUniform1i(program, loc, 1);
+#else
+    glUniform1i(loc, 1);
+#endif
 
 #ifndef ANDROID
     glEnableClientState(GL_VERTEX_ARRAY); // Why don't they work like glEnable(A|B) did before? or am I dumb?
