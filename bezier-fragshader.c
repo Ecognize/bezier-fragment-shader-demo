@@ -5,7 +5,7 @@
 
 #include <SDL_config.h>
 #include <SDL.h>
-#ifdef GLES
+#ifdef ANDROID
 #include <SDL_opengles2.h>
 #else
 #include <SDL_opengl.h>
@@ -42,7 +42,14 @@ void motion(int x, int y)
 GLuint loadShader(char *path,GLenum shaderType)
 {
     char buf[4096];
+
+
+#ifdef ANDROID
+    sprintf(buf,"%s",path);
+#else
     sprintf(buf,"%s/%s",DATADIR,path);
+#endif
+
     printf("Loading shader source: %s\n",buf);
 //     TODO: error handling
     FILE *fp=fopen(buf,"r");
@@ -341,7 +348,7 @@ int main(int argc, char *argv[])
 
     fshader = loadShader("bezier.glsl",GL_FRAGMENT_SHADER);
     vshader = loadShader("bezier-vertex.glsl",GL_VERTEX_SHADER);
-    
+
     if (!(fshader&&vshader))
     {
         fprintf(stderr,"One of shaders failed, aborting.\n");
@@ -367,7 +374,7 @@ int main(int argc, char *argv[])
     loc = glGetUniformLocation(program, "drawStroke");
     glProgramUniform1i(program, loc, 1);
 
-#ifndef GL_ES_VERSION_2_0
+#ifndef ANDROID
     glEnableClientState(GL_VERTEX_ARRAY); // Why don't they work like glEnable(A|B) did before? or am I dumb?
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 #endif
@@ -383,7 +390,12 @@ int main(int argc, char *argv[])
             case SDL_KEYDOWN:
                 switch(event.key.keysym.sym)
                 {
-                    case SDLK_ESCAPE: running = 0;              break;
+                    #ifndef ADNROID
+                        case SDLK_ESCAPE: running = 0;          break;
+                    #else
+                        case SDLK_AC_BACK: running = 0;         break;
+                    #endif
+
                     case SDLK_LEFT:   Camera.beta += M_PI / 36; break;
                     case SDLK_RIGHT:  Camera.beta -= M_PI / 36; break;
                     case SDLK_UP:    Camera.alpha += M_PI / 36; break;
