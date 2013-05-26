@@ -62,7 +62,11 @@ GLuint loadShader(char *path,GLenum shaderType)
     glGetObjectParameterivARB(shader,GL_COMPILE_STATUS,&compiled);
     if (!compiled)
     {
-        perror("Can't compile the shader\n");
+        GLchar buf[4096];
+        GLsizei sz;
+        glGetShaderInfoLog(shader,4096,&sz,buf);
+        glDeleteShader(shader);
+        fprintf(stderr,"Can't compile the shader: %s\n",buf);
         return 0;
     }
 
@@ -333,12 +337,11 @@ int main(int argc, char *argv[])
     glShadeModel(GL_SMOOTH);
 
     fshader = loadShader("bezier.glsl",GL_FRAGMENT_SHADER);
-    fshader = loadShader("bezier-vertex.glsl",GL_VERTEX_SHADER);
+    vshader = loadShader("bezier-vertex.glsl",GL_VERTEX_SHADER);
     
     if (!(fshader&&vshader))
     {
-        // TODO glShaderLog output here, not SDL one
-        fprintf(stderr,"Can't load the shader.\n");
+        fprintf(stderr,"One of shaders failed, aborting.\n");
         return -1;
     }
 
