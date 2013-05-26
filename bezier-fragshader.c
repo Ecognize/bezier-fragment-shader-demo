@@ -79,7 +79,7 @@ void camera()
     struct GLMatrix proj=getGLPerspectiveMatrix(M_PI/4.0,(GLfloat)width/height,10.0,10000.0);
     proj=getGLMatrixProduct(proj,getGLLookAtMatrix(dist*cos(alpha)*cos(beta),dist*sin(alpha),dist*cos(alpha)*sin(beta),0.0,0.0,0.0,0.0,cos(alpha)>0?1.0:-1.0,0.0));
     GLint loc=glGetUniformLocation(program,"projMatrix");
-    glProgramUniformMatrix4fv(program,loc,1,0,proj.data);
+    glProgramUniformMatrix4fv(program,loc,1,1,proj.data);
 }
 
 void draw()
@@ -261,7 +261,7 @@ void draw()
     struct GLMatrix model=getGLRotateMatrix(M_PI/2.0,1.0,0.0,0.0);
     model=getGLMatrixProduct(model,getGLTranslateMatrix(-450.0,-550.0,0.0));
     GLint loc=glGetUniformLocation(program,"modelMatrix");
-    glProgramUniformMatrix4fv(program,loc,1,0,model.data);
+    glProgramUniformMatrix4fv(program,loc,1,1,model.data);
     glColor3f(1.0,1.0,1.0);
     glVertexPointer(2,GL_FLOAT,0,vertices);
     glTexCoordPointer(2,GL_FLOAT,0,texcoords);
@@ -332,6 +332,23 @@ int main(int argc, char *argv[])
     glViewport(0, 0, width, height);
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
+
+//  TODO: (1) transpose all the getGL matrices (2) check the projection matrices
+//     glMatrixMode(GL_MODELVIEW);
+//     glPushMatrix();
+//         glLoadIdentity();
+//         printGLMatrix(captureGLMatrix(GL_MODELVIEW_MATRIX));
+//         glPushMatrix();
+//             glRotatef(90.0,1.0,0.0,0.0);
+//             printGLMatrix(captureGLMatrix(GL_MODELVIEW_MATRIX));
+//             printGLMatrix(getGLRotateMatrix(M_PI/2.0,1.0,0.0,0.0));
+//         glPopMatrix();
+//         glPushMatrix();
+//             glTranslatef(-450.0,-550.0,0.0);
+//             printGLMatrix(captureGLMatrix(GL_MODELVIEW_MATRIX));
+//             printGLMatrix(getGLTranslateMatrix(-450.0,-550.0,0.0));
+//         glPopMatrix();
+//     glPopMatrix();
 
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);

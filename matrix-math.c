@@ -85,3 +85,21 @@ struct GLMatrix getGLLookAtMatrix(GLfloat eyeX,GLfloat eyeY,GLfloat eyeZ,
     };
     return getGLMatrixProduct(ret,getGLTranslateMatrix(-eyeX,-eyeY,-eyeZ));
 }
+
+void printGLMatrix(struct GLMatrix a)
+{
+    printf("\n");
+    int i;
+    for (i=0;i<4;i++)
+        printf("%.5f,\t%.5f,\t%.5f,\t%.5f,\n",a.data[i*4],a.data[i*4+1],a.data[i*4+2],a.data[i*4+3]);
+    printf("\n");
+}
+
+struct GLMatrix captureGLMatrix(GLenum type)
+{
+    // TODO error checks
+    struct GLMatrix ret;
+    glGetFloatv(type,ret.data);
+    return ret;
+}
+
