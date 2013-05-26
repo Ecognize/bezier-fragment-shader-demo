@@ -29,18 +29,12 @@ struct camera
 
 void motion(int x, int y)
 {
-    static int mx = -1, my = -1;
+    int dx = x, dy = y;
 
-    if (mx < 0) mx = x; if (my < 0) my = y;
-
-    int dx = mx - x, dy = my - y;
-
-    printf("dx %d, dy %d\n", dx, dy);
-
-    if (dx > 0) Camera.beta += M_PI * abs(dx) / 64;
-    if (dx < 0) Camera.beta -= M_PI * abs(dx) / 64;
-    if (dy > 0) Camera.alpha -= M_PI * abs(dy) / 64;
-    if (dy < 0) Camera.alpha += M_PI * abs(dy) / 64;
+    if (dx < 0) Camera.beta += M_PI * abs(dx) / 64;
+    if (dx > 0) Camera.beta -= M_PI * abs(dx) / 64;
+    if (dy < 0) Camera.alpha -= M_PI * abs(dy) / 64;
+    if (dy > 0) Camera.alpha += M_PI * abs(dy) / 64;
 }
 
 GLuint loadShader(char *path)
@@ -292,6 +286,7 @@ void keyb(unsigned char key)
 
 void size(int w, int h)
 {
+    printf("resized! %d, %d\n", w, h);
     width = w; height = h;
     glViewport(0, 0, w, h);
     camera();
@@ -379,7 +374,7 @@ int main(int argc, char *argv[])
                     case SDLK_RIGHT:  Camera.beta -= M_PI / 36; break;
                     case SDLK_UP:    Camera.alpha += M_PI / 36; break;
                     case SDLK_DOWN:  Camera.alpha -= M_PI / 36; break;
-                    default: keyb(event.key.keysym.scancode);   break; // WARNING: passing zeroes
+                    default: keyb(event.key.keysym.scancode);   break;
                 }
             break;
 
@@ -388,7 +383,7 @@ int main(int argc, char *argv[])
             break;
 
             case SDL_MOUSEMOTION:
-                motion(event.motion.x, event.motion.y);
+                motion(event.motion.xrel, event.motion.yrel);
             break;
 
             case SDL_WINDOWEVENT_RESIZED:
