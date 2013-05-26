@@ -309,7 +309,11 @@ void size(int w, int h)
     camera();
 }
 
+#ifdef ANDROID
+int SDL_main(int argc, char *argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
@@ -344,7 +348,10 @@ int main(int argc, char *argv[])
     glClearColor(0.0, 0.0, 0.0, 0.0);
 
     glEnable(GL_DEPTH_TEST);
+
+#ifndef ANDROID
     glShadeModel(GL_SMOOTH);
+#endif
 
     fshader = loadShader("bezier.glsl",GL_FRAGMENT_SHADER);
     vshader = loadShader("bezier-vertex.glsl",GL_VERTEX_SHADER);
