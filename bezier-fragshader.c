@@ -264,8 +264,10 @@ void draw()
     GLint loc=glGetUniformLocation(program,"modelMatrix");
     glProgramUniformMatrix4fv(program,loc,1,0,model.data);
     glColor3f(1.0,1.0,1.0);
-    glVertexPointer(2,GL_FLOAT,0,vertices);
-    glTexCoordPointer(2,GL_FLOAT,0,texcoords);
+    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,vertices);
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,texcoords);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
     glDrawArrays(GL_TRIANGLES,0,vertArraySz*3);
 }
 
@@ -365,8 +367,10 @@ int main(int argc, char *argv[])
     loc = glGetUniformLocation(program, "drawStroke");
     glProgramUniform1i(program, loc, 1);
 
+#ifndef GL_ES_VERSION_2_0
     glEnableClientState(GL_VERTEX_ARRAY); // Why don't they work like glEnable(A|B) did before? or am I dumb?
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+#endif
 
     int running = 1;
 
