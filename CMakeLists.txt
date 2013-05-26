@@ -8,7 +8,7 @@ set(SDL_STATIC TRUE)
 add_subdirectory(SDL)
 
 add_definitions(-DDATADIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
-add_executable(bezier-fragshader bezier-fragshader.c)
+add_executable(bezier-fragshader bezier-fragshader.c matrix-math.c matrix-math.h)
 include_directories(${SDL2_BINARY_DIR}/include ${SDL2_SOURCE_DIR}/include)
 link_directories(${SDL2_BINARY_DIR}) # Isn't working?
 target_link_libraries(bezier-fragshader ${OPENGL_LIBRARIES} ${SDL2-static} m dl pthread SDL2-static)

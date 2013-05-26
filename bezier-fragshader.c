@@ -11,12 +11,14 @@
 #include <SDL_opengl.h>
 #endif
 
+#include "matrix-math.h"
+
 SDL_Event         event;
 SDL_Window*      window;
 SDL_GLContext glcontext;
 
 GLint linked, loc;
-GLuint program, shader;
+GLuint program, fshader, vshader;
 
 int width, height;
 
@@ -37,7 +39,7 @@ void motion(int x, int y)
     if (dy > 0) Camera.alpha += M_PI * abs(dy) / 64;
 }
 
-GLuint loadShader(char *path)
+GLuint loadShader(char *path,GLenum shaderType)
 {
     char buf[4096];
     sprintf(buf,"%s/%s",DATADIR,path);
@@ -51,7 +53,7 @@ GLuint loadShader(char *path)
     fread(shText,sizeof(GLubyte),(long)fsz,fp);
     fclose(fp);
 
-    GLuint shader=glCreateShader(GL_FRAGMENT_SHADER);
+    GLuint shader=glCreateShader(shaderType);
     glShaderSourceARB(shader,1,&shText,&fsz);
     glCompileShaderARB(shader);
     free(shText);
@@ -69,11 +71,11 @@ GLuint loadShader(char *path)
 
 void camera()
 {
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(40.0,(float)width/height,10.0,10000.0);
-    gluLookAt(Camera.dist*cos(Camera.alpha)*cos(Camera.beta),Camera.dist*sin(Camera.alpha),Camera.dist*cos(Camera.alpha)*sin(Camera.beta),0.0,0.0,0.0,0.0,cos(Camera.alpha)>0?1.0:-1.0,0.0);
-    glMatrixMode(GL_MODELVIEW);
+    GLfloat alpha=M_PI*Camera.alpha/180.0,beta=M_PI*Camera.beta/180.0,dist=Camera.dist;
+    struct GLMatrix proj=getGLPerspectiveMatrix(M_PI/4.0,(GLfloat)width/height,10.0,10000.0);
+    proj=getGLMatrixProduct(proj,getGLLookAtMatrix(dist*cos(alpha)*cos(beta),dist*sin(alpha),dist*cos(alpha)*sin(beta),0.0,0.0,0.0,0.0,cos(alpha)>0?1.0:-1.0,0.0));
+    GLint loc=glGetUniformLocation(program,"projMatrix");
+    glProgramUniformMatrix4fv(program,loc,1,0,proj.data);
 }
 
 void draw()
@@ -251,14 +253,15 @@ void draw()
 
     glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
     camera();
-    glPushMatrix();
-        glRotatef(90.0,1.0,0.0,0.0);
-        glTranslatef(-450.0,-550.0,0.0);
-        glColor3f(1.0,1.0,1.0);
-        glVertexPointer(2,GL_FLOAT,0,vertices);
-        glTexCoordPointer(2,GL_FLOAT,0,texcoords);
-        glDrawArrays(GL_TRIANGLES,0,vertArraySz*3);
-    glPopMatrix();
+    // Perhaps we don't need that recalculated each frame, but meh
+    struct GLMatrix model=getGLRotateMatrix(M_PI/2.0,1.0,0.0,0.0);
+    model=getGLMatrixProduct(model,getGLTranslateMatrix(-450.0,-550.0,0.0));
+    GLint loc=glGetUniformLocation(program,"modelMatrix");
+    glProgramUniformMatrix4fv(program,loc,1,0,model.data);
+    glColor3f(1.0,1.0,1.0);
+    glVertexPointer(2,GL_FLOAT,0,vertices);
+    glTexCoordPointer(2,GL_FLOAT,0,texcoords);
+    glDrawArrays(GL_TRIANGLES,0,vertArraySz*3);
 }
 
 void keyb(unsigned char key)
@@ -329,16 +332,19 @@ int main(int argc, char *argv[])
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
 
-    shader = loadShader("bezier.glsl");
-
-    if (! shader)
+    fshader = loadShader("bezier.glsl",GL_FRAGMENT_SHADER);
+    fshader = loadShader("bezier-vertex.glsl",GL_VERTEX_SHADER);
+    
+    if (!(fshader&&vshader))
     {
-        fprintf(stderr,"Can't create context: %s\n", SDL_GetError());
+        // TODO glShaderLog output here, not SDL one
+        fprintf(stderr,"Can't load the shader.\n");
         return -1;
     }
 
     program = glCreateProgram();
-    glAttachShader(program, shader);
+    glAttachShader(program, fshader);
+    glAttachShader(program, vshader);
     glLinkProgram(program);
 
     glGetProgramiv(program, GL_LINK_STATUS, &linked);
