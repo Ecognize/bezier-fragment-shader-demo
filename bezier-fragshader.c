@@ -56,7 +56,7 @@ GLuint loadShader(char *path,GLenum shaderType)
     fseek(fp,0,SEEK_END);
     GLint fsz=(GLint)ftell(fp);
     fseek(fp,0,SEEK_SET);
-    GLubyte *shText=(char*)malloc(sizeof(GLubyte)*fsz);
+    GLchar *shText=(char*)malloc(sizeof(GLubyte)*fsz);
     fread(shText,sizeof(GLubyte),(long)fsz,fp);
     fclose(fp);
 
@@ -104,7 +104,7 @@ void camera()
 #ifndef ANDROID
     glProgramUniformMatrix4fv(program,loc,1,0,proj.data);
 #else
-    glGetProgramiv(program,loc,proj.data);
+    glUniformMatrix4fv(loc,1,0,proj.data);
 #endif
 
 }
@@ -292,7 +292,7 @@ void draw()
 #ifndef ANDROID
     glProgramUniformMatrix4fv(program,loc,1,0,model.data);
 #else
-    glGetProgramiv(program,loc,model.data);
+    glUniformMatrix4fv(loc,1,0,model.data);
 #endif
 
 
@@ -474,6 +474,8 @@ int main(int argc, char *argv[])
             case SDL_WINDOWEVENT_RESIZED:
                 size(event.window.data1, event.window.data2);
             break;
+
+            // handle touch events here
 
             case SDL_QUIT:
                 running = 0;
