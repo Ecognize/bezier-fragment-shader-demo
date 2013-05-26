@@ -1,7 +1,7 @@
 #include "matrix-math.h"
 
 // Probably there's code for that, but it's fast enough to type
-struct GLMatrix getGLMatrixProduct(struct GLMatrix a,struct GLMatrix b)
+struct GLMatrix getGLMatrixProduct(struct GLMatrix b,struct GLMatrix a) // fugly hack, replacing A and B, TODO: investigate the math part
 {
     struct GLMatrix ret={
         .data={     a.data[0] * b.data[0] + a.data[1] * b.data[4] + a.data[2] * b.data[8] + a.data[3] * b.data[12],
@@ -28,10 +28,10 @@ struct GLMatrix getGLMatrixProduct(struct GLMatrix a,struct GLMatrix b)
 struct GLMatrix getGLTranslateMatrix(GLfloat dx,GLfloat dy,GLfloat dz)
 {
     struct GLMatrix ret={
-        .data={ 1,  0,  0,  dx,
-                0,  1,  0,  dy,
-                0,  0,  1,  dz,
-                0,  0,  0,  1,
+        .data={ 1,  0,  0,  0,
+                0,  1,  0,  0,
+                0,  0,  1,  0,
+                dx, dy, dz,  1,
         },
     };
     return ret;
@@ -42,9 +42,9 @@ struct GLMatrix getGLRotateMatrix(GLfloat angle,GLfloat _x,GLfloat _y,GLfloat _z
     GLfloat len=sqrt(_x*_x+_y*_y+_z*_z);
     GLfloat x=_x/len, y=_y/len, z=_z/len, c=cos(angle), s=sin(angle);
     struct GLMatrix ret={
-        .data={ x*x*(1-c)+c,    x*y*(1-c)-z*s,  x*z*(1-c)+y*s,  0,
-                y*x*(1-c)+z*s,  y*y*(1-c)+c,    y*z*(1-c)-x*s,  0,
-                x*z*(1-c)-y*s,  y*z*(1-c)+x*s,  z*z*(1-c)+c,    0,
+        .data={ x*x*(1-c)+c,    y*x*(1-c)+z*s,  x*z*(1-c)-y*s,  0,
+                x*y*(1-c)-z*s,  y*y*(1-c)+c,    y*z*(1-c)+x*s,  0,
+                x*z*(1-c)+y*s,  y*z*(1-c)-x*s,  z*z*(1-c)+c,    0,
                 0,              0,              0,              1,
         },
     };
@@ -57,8 +57,8 @@ struct GLMatrix getGLPerspectiveMatrix(GLfloat fov,GLfloat aspect,GLfloat zNear,
     struct GLMatrix ret={
         .data={ f/aspect,   0,  0,                          0,
                 0,          f,  0,                          0,
-                0,          0,  (zNear+zFar)/(zNear-zFar),  2*zNear*zFar/(zNear-zFar),
-                0,          0,  -1,                         0,
+                0,          0,  (zNear+zFar)/(zNear-zFar),  -1,
+                0,          0,  2*zNear*zFar/(zNear-zFar),  0,
         },
     };
     return ret;
@@ -77,9 +77,9 @@ struct GLMatrix getGLLookAtMatrix(GLfloat eyeX,GLfloat eyeY,GLfloat eyeZ,
     GLfloat s[]={   f[1]*up[2]-f[2]*up[1],  f[2]*up[0]-f[0]*up[2],  f[0]*up[1]-f[1]*up[0]   };
     GLfloat u[]={   s[1]*f[2]-s[2]*f[1],  s[2]*f[0]-s[0]*f[2],  s[0]*f[1]-s[1]*f[0]   };
     struct GLMatrix ret={
-        .data={ s[0],   s[1],   s[2],   0,
-                u[0],   u[1],   u[2],   0,
-                -f[0],  -f[1],  -f[2],  0,
+        .data={ s[0],   u[0],   -f[0],  0,
+                s[1],   u[1],   -f[1],  0,
+                s[2],   u[2],   -f[2],  0,
                 0,      0,      0,      1,
         },
     };
