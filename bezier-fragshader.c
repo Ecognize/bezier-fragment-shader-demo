@@ -25,17 +25,22 @@ struct camera
     double alpha;
     double beta;
     double dist;
-} Camera = { M_PI/4,0.0,1500.0 };
+} Camera = { M_PI/4, 0.0, 1500.0 };
 
 void motion(int x, int y)
 {
-    static int mx=-1,my=-1;
-    if (mx<0) mx=x; if (my<0) my=y;
-    int dx=mx-x,dy=my-y;
-    if (dx<0) Camera.beta+=M_PI*abs(dx)/64;
-    if (dx>0) Camera.beta-=M_PI*abs(dx)/64;
-    if (dy<0) Camera.alpha-=M_PI*abs(dy)/64;
-    if (dy>0) Camera.alpha+=M_PI*abs(dy)/64;
+    static int mx = -1, my = -1;
+
+    if (mx < 0) mx = x; if (my < 0) my = y;
+
+    int dx = mx - x, dy = my - y;
+
+    printf("dx %d, dy %d\n", dx, dy);
+
+    if (dx > 0) Camera.beta += M_PI * abs(dx) / 64;
+    if (dx < 0) Camera.beta -= M_PI * abs(dx) / 64;
+    if (dy > 0) Camera.alpha -= M_PI * abs(dy) / 64;
+    if (dy < 0) Camera.alpha += M_PI * abs(dy) / 64;
 }
 
 GLuint loadShader(char *path)
@@ -262,7 +267,7 @@ void draw()
     glPopMatrix();
 }
 
-void keyb(unsigned char key,int mx,int my)
+void keyb(unsigned char key)
 {
     static short fillCutPart = 0, drawFill = 1, drawStroke = 1;
     GLint loc;
@@ -374,7 +379,7 @@ int main(int argc, char *argv[])
                     case SDLK_RIGHT:  Camera.beta -= M_PI / 36; break;
                     case SDLK_UP:    Camera.alpha += M_PI / 36; break;
                     case SDLK_DOWN:  Camera.alpha -= M_PI / 36; break;
-                    default: keyb(event.key.keysym.scancode,0,0);   break; // WARNING: passing zeroes
+                    default: keyb(event.key.keysym.scancode);   break; // WARNING: passing zeroes
                 }
             break;
 
