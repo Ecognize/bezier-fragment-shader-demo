@@ -72,10 +72,14 @@ struct GLMatrix getGLLookAtMatrix(GLfloat eyeX,GLfloat eyeY,GLfloat eyeZ,
     GLfloat len=sqrt(f[0]*f[0]+f[1]*f[1]+f[2]*f[2]);
     f[0]/=len; f[1]/=len; f[2]/=len;
     GLfloat up[]={ upX,   upY,    upZ };
-    len=sqrt(up[0]*up[0]+up[1]*up[1]+up[2]*up[2]);
-    up[0]/=len; up[1]/=len; up[2]/=len;
+    
     GLfloat s[]={   f[1]*up[2]-f[2]*up[1],  f[2]*up[0]-f[0]*up[2],  f[0]*up[1]-f[1]*up[0]   };
+    
+    len=sqrt(s[0]*s[0]+s[1]*s[1]+s[2]*s[2]);
+    s[0]/=len; s[1]/=len; s[2]/=len;
+    
     GLfloat u[]={   s[1]*f[2]-s[2]*f[1],  s[2]*f[0]-s[0]*f[2],  s[0]*f[1]-s[1]*f[0]   };
+    
     struct GLMatrix ret={
         .data={ s[0],   u[0],   -f[0],  0,
                 s[1],   u[1],   -f[1],  0,
