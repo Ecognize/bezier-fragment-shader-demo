@@ -312,15 +312,15 @@ void keyb(unsigned char key,int mx,int my)
     {
         case 'c': case 'C': fillCutPart=!fillCutPart; 
             loc=glGetUniformLocation(program,"fillCutPart");
-            glProgramUniform1i(program,loc,fillCutPart);
+            glUniform1i(loc,fillCutPart);
             break;
         case 'f': case 'F': drawFill=!drawFill; 
             loc=glGetUniformLocation(program,"drawFill");
-            glProgramUniform1i(program,loc,drawFill);
+            glUniform1i(loc,drawFill);
             break;
         case 's': case 'S': drawStroke=!drawStroke; 
             loc=glGetUniformLocation(program,"drawStroke");
-            glProgramUniform1i(program,loc,drawStroke);
+            glUniform1i(loc,drawStroke);
             break;
         case 'p': case 'P': drawPoints=!drawPoints; 
             break;
@@ -364,9 +364,9 @@ int main(int argc,char *argv[])
     }
     glUseProgram(program);
     GLint loc=glGetUniformLocation(program,"drawFill");
-    glProgramUniform1i(program,loc,1);
+    glUniform1i(loc,1);
     loc=glGetUniformLocation(program,"drawStroke");
-    glProgramUniform1i(program,loc,1);
+    glUniform1i(loc,1);
     
     glEnableClientState(GL_VERTEX_ARRAY); // Why don't they work like glEnable(A|B) did before? or am I dumb?
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
