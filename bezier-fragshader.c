@@ -387,9 +387,7 @@ int main(int argc, char *argv[])
 #endif
 
     glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,vertices);
-    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,texcoords);
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
     
 #ifdef USE_SDL
     int running = 1;
