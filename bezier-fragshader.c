@@ -3,25 +3,60 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <SDL_config.h>
-#include <SDL.h>
-#ifdef ANDROID
-#include <SDL_opengles2.h>
+#ifdef USE_SDL
+    #include <SDL_config.h>
+    #include <SDL.h>
+    #ifdef ANDROID
+    #include <SDL_opengles2.h>
+    #else
+    #include <SDL_opengl.h>
+    #endif
 #else
-#include <SDL_opengl.h>
+    #ifdef _WIN32
+        #include <windows.h> 
+    #endif
+    #include <GL/glut.h>
 #endif
 
 #include "matrix-math.h"
 #include "shape.h"
 
+#ifdef USE_SDL
 SDL_Event         event;
 SDL_Window*      window;
 SDL_GLContext glcontext;
+#endif
 
 GLint linked, loc;
 GLuint program, fshader, vshader;
 
 int width, height;
+
+unsigned frames=0;
+unsigned timemark=0;
+#ifndef USE_SDL
+unsigned currenttime=0;
+#define TIMER_RESOLUTION 100
+void timer(int value)
+{
+    currenttime+=TIMER_RESOLUTION;
+    glutTimerFunc(TIMER_RESOLUTION,timer,0);
+}
+#endif
+
+void performanceReport()
+{
+#ifdef USE_SDL
+    unsigned now=SDL_GetTicks();
+#else
+    unsigned now=currenttime;
+#endif
+    printf("Performance report: %d frames in %d milliseconds.\nAverage fps: %.5f.\n",
+           frames,now-timemark,1000.0*(double)(frames)/((double)(now-timemark)));
+    timemark=now;
+    frames=0;
+}
+
 
 struct camera
 {
@@ -29,6 +64,16 @@ struct camera
     double beta;
     double dist;
 } Camera = { M_PI/4, 0.0, 1500.0 };
+
+#ifndef USE_SDL
+void mouse(int b,int s,int x,int y)
+{
+    if (b==3 || b==4)
+    {
+        Camera.dist*= (b==4)? 1.1 : 0.9;
+    }
+}
+#endif
 
 void motion(int x, int y)
 {
@@ -125,15 +170,45 @@ void draw()
 #endif
 
     glDrawArrays(GL_TRIANGLES,0,vertArraySz*3);
+    
+#ifndef USE_SDL
+    glutSwapBuffers();
+#else
+    SDL_GL_SwapWindow(window);
+#endif
+    frames++;
 }
 
+#ifndef USE_SDL
+void keybs(int key,int mx,int my)
+{
+    switch (key)
+    {
+    case GLUT_KEY_LEFT: Camera.beta+=M_PI/36; break;
+    case GLUT_KEY_RIGHT: Camera.beta-=M_PI/36; break;
+    case GLUT_KEY_UP: Camera.alpha+=M_PI/36; break;
+    case GLUT_KEY_DOWN: Camera.alpha-=M_PI/36; break;
+    case GLUT_KEY_F1: performanceReport(); break;
+    }
+}
+#endif
+
+#ifndef USE_SDL
+void keyb(unsigned char key,int mx,int my)
+#else
 void keyb(unsigned char key)
+#endif
 {
     static short fillCutPart = 0, drawFill = 1, drawStroke = 1, useBezier = 1;
     GLint loc;
     switch (key)
     {
-        case SDL_SCANCODE_C: fillCutPart=!fillCutPart;
+        #ifndef USE_SDL
+        case 'C': case 'c':
+        #else
+        case SDL_SCANCODE_C:
+        #endif
+            fillCutPart=!fillCutPart;
             loc=glGetUniformLocation(program,"fillCutPart");
 
             #ifndef ANDROID
@@ -141,9 +216,14 @@ void keyb(unsigned char key)
             #else
                 glUniform1i(loc, fillCutPart);
             #endif
-
             break;
-        case SDL_SCANCODE_P: useBezier=!useBezier;
+            
+        #ifndef USE_SDL
+        case 'P': case 'p':
+        #else
+        case SDL_SCANCODE_P:
+        #endif
+            useBezier=!useBezier;
             loc=glGetUniformLocation(program,"useBezier");
 
             #ifndef ANDROID
@@ -152,29 +232,53 @@ void keyb(unsigned char key)
                 glUniform1i(loc, useBezier);
             #endif
             break;
-                
-        case SDL_SCANCODE_F: drawFill=!drawFill;
+            
+        #ifndef USE_SDL
+        case 'F': case 'f':
+        #else
+        case SDL_SCANCODE_F:
+        #endif
+            drawFill=!drawFill;
             loc=glGetUniformLocation(program,"drawFill");
-
             #ifndef ANDROID
                 glProgramUniform1i(program,loc,drawFill);
             #else
                 glUniform1i(loc, drawFill);
             #endif
-
             break;
-        case SDL_SCANCODE_S: drawStroke=!drawStroke;
+        
+        #ifndef USE_SDL
+        case 'S': case 's':
+        #else
+        case SDL_SCANCODE_S:
+        #endif
+            drawStroke=!drawStroke;
             loc=glGetUniformLocation(program,"drawStroke");
-
             #ifndef ANDROID
                 glProgramUniform1i(program,loc,drawStroke);
             #else
                 glUniform1i(loc, drawStroke);
             #endif
-
+                
+        #ifndef USE_SDL
+        case 'Z': case 'z':
+        #else
+        case SDL_SCANCODE_Z:
+        #endif
+            Camera.dist*= 1.1; break;
+        
+        #ifndef USE_SDL
+        case 'X': case 'x':
+        #else
+        case SDL_SCANCODE_X:
+        #endif
+            Camera.dist*= 0.9; break;
+        #ifndef USE_SDL
+        case 27: // Escape
+            performanceReport();
+            exit(0);
             break;
-        case SDL_SCANCODE_Z: Camera.dist*= 1.1; break;
-        case SDL_SCANCODE_X: Camera.dist*= 0.9; break;
+        #endif
     }
 }
 
@@ -183,17 +287,8 @@ void size(int w, int h)
     printf("resized! %d, %d\n", w, h);
     width = w; height = h;
     glViewport(0, 0, w, h);
-    camera();
 }
 
-void performanceReport(unsigned *time,unsigned *frames)
-{
-    unsigned now=SDL_GetTicks();
-    printf("Performance report: %d frames in %d milliseconds.\nAverage fps: %.5f.\n",
-           *frames,now-*time,1000.0*(double)(*frames)/((double)(now-*time)));
-    *time=now;
-    *frames=0;
-}
 
 #ifdef ANDROID
 int SDL_main(int argc, char *argv[])
@@ -201,6 +296,7 @@ int SDL_main(int argc, char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
+#ifdef USE_SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         perror("can't initialize SDL\n");
@@ -228,6 +324,13 @@ int main(int argc, char *argv[])
 
     SDL_GL_MakeCurrent(window, glcontext);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+#else
+    glutInit(&argc,argv);
+    glutInitWindowSize(700,700);
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH);
+    glutCreateWindow("Bezier Fragment Shader Demo");
+#endif
+    
 
     glViewport(0, 0, width, height);
 
@@ -263,8 +366,7 @@ int main(int argc, char *argv[])
     glProgramUniform1i(program, loc, 1);
 #else
     glUniform1i(loc, 1);
-#endif
-    
+#endif    
     loc = glGetUniformLocation(program, "useBezier");
 #ifndef ANDROID
     glProgramUniform1i(program, loc, 1);
@@ -289,9 +391,9 @@ int main(int argc, char *argv[])
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     
+#ifdef USE_SDL
     int running = 1;
-    unsigned timemark=SDL_GetTicks();
-    unsigned frames=0;
+    timemark=SDL_GetTicks();
 
     while(running)
     {
@@ -304,7 +406,7 @@ int main(int argc, char *argv[])
                 case SDL_KEYDOWN:
                     switch(event.key.keysym.sym)
                     {
-                        case SDLK_F1: performanceReport(&timemark,&frames); break;
+                        case SDLK_F1: performanceReport(); break;
                         
                         #ifndef ADNROID
                             case SDLK_ESCAPE: running = 0;          break;
@@ -341,16 +443,25 @@ int main(int argc, char *argv[])
         }
 
         draw();
-        SDL_GL_SwapWindow(window);
-        frames++;
     }
     
-    performanceReport(&timemark,&frames);
+    performanceReport();
     
     SDL_GL_MakeCurrent(NULL, NULL);
     SDL_GL_DeleteContext(glcontext);
     SDL_DestroyWindow(window);
     SDL_Quit();
-
+#else
+    glutReshapeFunc(size);
+    glutDisplayFunc(draw);
+    glutIdleFunc(draw);
+    glutMouseFunc(mouse);
+    glutMotionFunc(motion);
+    glutSpecialFunc(keybs);
+    glutKeyboardFunc(keyb);
+    glutTimerFunc(TIMER_RESOLUTION,timer,0);
+    glutMainLoop();
+#endif
+    
     return 0;
 }
