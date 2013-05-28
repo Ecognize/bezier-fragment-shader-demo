@@ -129,7 +129,7 @@ void draw()
 
 void keyb(unsigned char key)
 {
-    static short fillCutPart = 0, drawFill = 1, drawStroke = 1;
+    static short fillCutPart = 0, drawFill = 1, drawStroke = 1, useBezier = 1;
     GLint loc;
     switch (key)
     {
@@ -143,6 +143,16 @@ void keyb(unsigned char key)
             #endif
 
             break;
+        case SDL_SCANCODE_P: useBezier=!useBezier;
+            loc=glGetUniformLocation(program,"useBezier");
+
+            #ifndef ANDROID
+                glProgramUniform1i(program,loc,useBezier);
+            #else
+                glUniform1i(loc, useBezier);
+            #endif
+            break;
+                
         case SDL_SCANCODE_F: drawFill=!drawFill;
             loc=glGetUniformLocation(program,"drawFill");
 
@@ -245,9 +255,15 @@ int main(int argc, char *argv[])
 #else
     glUniform1i(loc, 1);
 #endif
+    
+    loc = glGetUniformLocation(program, "useBezier");
+#ifndef ANDROID
+    glProgramUniform1i(program, loc, 1);
+#else
+    glUniform1i(loc, 1);
+#endif
 
     loc = glGetUniformLocation(program, "drawStroke");
-
 #ifndef ANDROID
     glProgramUniform1i(program, loc, 1);
 #else
