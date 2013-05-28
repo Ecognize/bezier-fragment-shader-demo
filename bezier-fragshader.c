@@ -186,6 +186,15 @@ void size(int w, int h)
     camera();
 }
 
+void performanceReport(unsigned *time,unsigned *frames)
+{
+    unsigned now=SDL_GetTicks();
+    printf("Performance report: %d frames in %d milliseconds.\nAverage fps: %.5f.\n",
+           *frames,now-*time,1000.0*(double)(*frames)/((double)(now-*time)));
+    *time=now;
+    *frames=0;
+}
+
 #ifdef ANDROID
 int SDL_main(int argc, char *argv[])
 #else
@@ -281,53 +290,63 @@ int main(int argc, char *argv[])
     glEnableVertexAttribArray(1);
     
     int running = 1;
+    unsigned timemark=SDL_GetTicks();
+    unsigned frames=0;
 
     while(running)
     {
-        SDL_WaitEvent(&event);
-
-        switch(event.type)
+        if ( SDL_PollEvent(&event) > 0 )
         {
-            case SDL_KEYDOWN:
-                switch(event.key.keysym.sym)
-                {
-                    #ifndef ADNROID
-                        case SDLK_ESCAPE: running = 0;          break;
-                    #else
-                        case SDLK_AC_BACK: running = 0;         break;
-                    #endif
+//         SDL_WaitEvent(&event);
 
-                    case SDLK_LEFT:   Camera.beta += M_PI / 36; break;
-                    case SDLK_RIGHT:  Camera.beta -= M_PI / 36; break;
-                    case SDLK_UP:    Camera.alpha += M_PI / 36; break;
-                    case SDLK_DOWN:  Camera.alpha -= M_PI / 36; break;
-                    default: keyb(event.key.keysym.scancode);   break;
-                }
-            break;
+            switch(event.type)
+            {
+                case SDL_KEYDOWN:
+                    switch(event.key.keysym.sym)
+                    {
+                        case SDLK_F1: performanceReport(&timemark,&frames); break;
+                        
+                        #ifndef ADNROID
+                            case SDLK_ESCAPE: running = 0;          break;
+                        #else
+                            case SDLK_AC_BACK: running = 0;         break;
+                        #endif
 
-            case SDL_MOUSEWHEEL:
-                Camera.dist*= (event.wheel.y < 0)? 1.1 : 0.9;
-            break;
+                        case SDLK_LEFT:   Camera.beta += M_PI / 36; break;
+                        case SDLK_RIGHT:  Camera.beta -= M_PI / 36; break;
+                        case SDLK_UP:    Camera.alpha += M_PI / 36; break;
+                        case SDLK_DOWN:  Camera.alpha -= M_PI / 36; break;
+                        default: keyb(event.key.keysym.scancode);   break;
+                    }
+                break;
 
-            case SDL_MOUSEMOTION:
-                if(event.motion.state == 1) motion(event.motion.xrel, event.motion.yrel);
-            break;
+                case SDL_MOUSEWHEEL:
+                    Camera.dist*= (event.wheel.y < 0)? 1.1 : 0.9;
+                break;
 
-            case SDL_WINDOWEVENT_RESIZED:
-                size(event.window.data1, event.window.data2);
-            break;
+                case SDL_MOUSEMOTION:
+                    if(event.motion.state == 1) motion(event.motion.xrel, event.motion.yrel);
+                break;
 
-            // handle touch events here
+                case SDL_WINDOWEVENT_RESIZED:
+                    size(event.window.data1, event.window.data2);
+                break;
 
-            case SDL_QUIT:
-                running = 0;
-            break;
+                // handle touch events here
+
+                case SDL_QUIT:
+                    running = 0;
+                break;
+            }
         }
 
         draw();
         SDL_GL_SwapWindow(window);
+        frames++;
     }
-
+    
+    performanceReport(&timemark,&frames);
+    
     SDL_GL_MakeCurrent(NULL, NULL);
     SDL_GL_DeleteContext(glcontext);
     SDL_DestroyWindow(window);
