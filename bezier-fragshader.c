@@ -77,7 +77,14 @@ void mouse(int b,int s,int x,int y)
 
 void motion(int x, int y)
 {
+#ifndef USE_SDL
+    static int mx=-1,my=-1;
+    if (mx<0) mx=x; if (my<0) my=y;
+    int dx=mx-x,dy=my-y;
+    mx=x;my=y;
+#else
     int dx = x, dy = y;
+#endif
 
     if (dx < 0) Camera.beta += M_PI * abs(dx) / 64;
     if (dx > 0) Camera.beta -= M_PI * abs(dx) / 64;
