@@ -1,4 +1,4 @@
-attribute vec4 vertex_pos;
+attribute vec4 vertexPos;
 uniform mat4 projMatrix;
 uniform mat4 modelMatrix;
 
@@ -10,5 +10,5 @@ void main(void)
         case 1: gl_TexCoord[0] = vec4(0.5,0.0,0.0,0.0); break;
         case 2: gl_TexCoord[0] = vec4(1.0,1.0,0.0,0.0); break;
     }   
-    gl_Position=projMatrix*modelMatrix*vertex_pos;
+    gl_Position=projMatrix*modelMatrix*vertexPos;
 }

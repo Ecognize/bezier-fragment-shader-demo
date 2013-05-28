@@ -156,6 +156,43 @@ void camera()
 
 void draw()
 {
+    // Primitive separation, done only once
+    // Also, they don't get freed until exist, be sure NOT to copypaste this code anywhere
+    static GLfloat *innerPrimitives=NULL, *outerPrimitives=NULL;
+    static int innerPrimitiveSz=0,outerPrimitiveSz=0;
+    int i;
+    
+    if (innerPrimitives==NULL)
+    {
+        int fill=0; int j=0;
+        for (i=0;i<vertArraySz;i++)
+            if (curveClasses[i]<0)
+                innerPrimitiveSz++;
+        innerPrimitives=(GLfloat*)malloc(sizeof(GLfloat)*innerPrimitiveSz*6);
+        for (i=0;i<vertArraySz;i++)
+            if (curveClasses[i]<0)
+            {
+                for (j=0;j<6;j++)    
+                    innerPrimitives[fill*6+j]=vertices[i*6+j];
+                fill++;
+            }
+    }
+    if (outerPrimitives==NULL)
+    {
+        int fill=0; int j=0;
+        for (i=0;i<vertArraySz;i++)
+            if (curveClasses[i]>0)
+                outerPrimitiveSz++;
+        outerPrimitives=(GLfloat*)malloc(sizeof(GLfloat)*outerPrimitiveSz*6);
+        for (i=0;i<vertArraySz;i++)
+            if (curveClasses[i]>0)
+            {
+                for (j=0;j<6;j++)    
+                    outerPrimitives[fill*6+j]=vertices[i*6+j];
+                fill++;
+            }
+    }
+    
     glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
     camera();
     // Perhaps we don't need that recalculated each frame, but meh
@@ -169,7 +206,23 @@ void draw()
     glUniformMatrix4fv(loc,1,0,model.data);
 #endif
 
-    glDrawArrays(GL_TRIANGLES,0,vertArraySz*3);
+    loc=glGetUniformLocation(program,"drawState");
+    #ifndef ANDROID
+        glProgramUniform1i(program,loc,-1);
+    #else
+        glUniform1i(loc, -1;
+    #endif
+    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,innerPrimitives);
+    glDrawArrays(GL_TRIANGLES,0,innerPrimitiveSz*3);
+    
+    loc=glGetUniformLocation(program,"drawState");
+    #ifndef ANDROID
+        glProgramUniform1i(program,loc,1);
+    #else
+        glUniform1i(loc, 1;
+    #endif
+    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,outerPrimitives);
+    glDrawArrays(GL_TRIANGLES,0,outerPrimitiveSz*3);
     
 #ifndef USE_SDL
     glutSwapBuffers();
@@ -386,8 +439,8 @@ int main(int argc, char *argv[])
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 #endif
 
-    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,vertices);
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
     
 #ifdef USE_SDL
     int running = 1;

@@ -2,16 +2,19 @@ uniform bool drawFill;
 uniform bool drawStroke;
 uniform bool fillCutPart;
 uniform bool useBezier;
+uniform int drawState;
 
 void main (void)  
 {
-    if (useBezier)
+    if (useBezier || drawState==0)
     {
-        if (drawStroke && abs(pow(gl_TexCoord[0].s,2)-gl_TexCoord[0].t)<0.01)
+        float dist=pow(gl_TexCoord[0].s,2)-gl_TexCoord[0].t;
+        // Make use of GreaterThan etc
+        if (drawStroke && (abs(dist)<0.01))
         {
             gl_FragColor = vec4(1.0,1.0,1.0,1.0);  
         }
-        else if (pow(gl_TexCoord[0].s,2)-gl_TexCoord[0].t>0)
+        else if ((drawState<0 && dist>0) || (drawState>0 && dist<0))
         {
             if (fillCutPart)
                 gl_FragColor = vec4(0.4,0.4,1.0,1.0);
