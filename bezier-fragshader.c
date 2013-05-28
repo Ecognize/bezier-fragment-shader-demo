@@ -27,7 +27,7 @@ SDL_Window*      window;
 SDL_GLContext glcontext;
 #endif
 
-GLint linked, loc;
+GLint linked;
 GLuint program, fshader, vshader;
 
 int width, height;
@@ -108,23 +108,14 @@ GLuint loadShader(char *path,GLenum shaderType)
 
     GLuint shader=glCreateShader(shaderType);
 
-#ifndef ANDROID
-    glShaderSourceARB(shader,1,&shText,&fsz);
-    glCompileShaderARB(shader);
-#else
     glShaderSource(shader,1,&shText,&fsz);
     glCompileShader(shader);
-#endif
 
     free(shText);
 
     GLint compiled;
 
-#ifndef ANDROID
-    glGetObjectParameterivARB(shader,GL_COMPILE_STATUS,&compiled);
-#else
     glGetProgramiv(shader,GL_COMPILE_STATUS,&compiled);
-#endif
 
     if (!compiled)
     {
@@ -145,13 +136,7 @@ void camera()
     proj=getGLMatrixProduct(proj,getGLLookAtMatrix(
         Camera.dist*cos(Camera.alpha)*cos(Camera.beta),Camera.dist*sin(Camera.alpha),Camera.dist*cos(Camera.alpha)*sin(Camera.beta),
         0.0,0.0,0.0,0.0,cos(Camera.alpha)>0?1.0:-1.0,0.0));
-    GLint loc=glGetUniformLocation(program,"projMatrix");
-
-#ifndef ANDROID
-    glProgramUniformMatrix4fv(program,loc,1,0,proj.data);
-#else
-    glUniformMatrix4fv(loc,1,0,proj.data);
-#endif
+    glUniformMatrix4fv(glGetUniformLocation(program,"projMatrix"),1,0,proj.data);
 }
 
 void draw()
@@ -198,29 +183,14 @@ void draw()
     // Perhaps we don't need that recalculated each frame, but meh
     struct GLMatrix model=getGLRotateMatrix(M_PI/2.0,1.0,0.0,0.0);
     model=getGLMatrixProduct(model,getGLTranslateMatrix(-450.0,-550.0,0.0));
-    GLint loc=glGetUniformLocation(program,"modelMatrix");
+    glUniformMatrix4fv(glGetUniformLocation(program,"modelMatrix"),1,0,model.data);
 
-#ifndef ANDROID
-    glProgramUniformMatrix4fv(program,loc,1,0,model.data);
-#else
-    glUniformMatrix4fv(loc,1,0,model.data);
-#endif
-
-    loc=glGetUniformLocation(program,"drawState");
-    #ifndef ANDROID
-        glProgramUniform1i(program,loc,-1);
-    #else
-        glUniform1i(loc, -1;
-    #endif
+    glUniform1i(glGetUniformLocation(program,"drawState"), -1);
     glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,innerPrimitives);
     glDrawArrays(GL_TRIANGLES,0,innerPrimitiveSz*3);
     
-    loc=glGetUniformLocation(program,"drawState");
-    #ifndef ANDROID
-        glProgramUniform1i(program,loc,1);
-    #else
-        glUniform1i(loc, 1;
-    #endif
+   
+    glUniform1i(glGetUniformLocation(program,"drawState"), 1);
     glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,outerPrimitives);
     glDrawArrays(GL_TRIANGLES,0,outerPrimitiveSz*3);
     
@@ -253,7 +223,6 @@ void keyb(unsigned char key)
 #endif
 {
     static short fillCutPart = 0, drawFill = 1, drawStroke = 1, useBezier = 1;
-    GLint loc;
     switch (key)
     {
         #ifndef USE_SDL
@@ -262,13 +231,7 @@ void keyb(unsigned char key)
         case SDL_SCANCODE_C:
         #endif
             fillCutPart=!fillCutPart;
-            loc=glGetUniformLocation(program,"fillCutPart");
-
-            #ifndef ANDROID
-                glProgramUniform1i(program,loc,fillCutPart);
-            #else
-                glUniform1i(loc, fillCutPart);
-            #endif
+            glUniform1i(glGetUniformLocation(program,"fillCutPart"), fillCutPart);
             break;
             
         #ifndef USE_SDL
@@ -277,13 +240,7 @@ void keyb(unsigned char key)
         case SDL_SCANCODE_P:
         #endif
             useBezier=!useBezier;
-            loc=glGetUniformLocation(program,"useBezier");
-
-            #ifndef ANDROID
-                glProgramUniform1i(program,loc,useBezier);
-            #else
-                glUniform1i(loc, useBezier);
-            #endif
+            glUniform1i(glGetUniformLocation(program,"useBezier"), useBezier);
             break;
             
         #ifndef USE_SDL
@@ -292,12 +249,7 @@ void keyb(unsigned char key)
         case SDL_SCANCODE_F:
         #endif
             drawFill=!drawFill;
-            loc=glGetUniformLocation(program,"drawFill");
-            #ifndef ANDROID
-                glProgramUniform1i(program,loc,drawFill);
-            #else
-                glUniform1i(loc, drawFill);
-            #endif
+            glUniform1i(glGetUniformLocation(program,"drawFill"), drawFill);
             break;
         
         #ifndef USE_SDL
@@ -306,12 +258,7 @@ void keyb(unsigned char key)
         case SDL_SCANCODE_S:
         #endif
             drawStroke=!drawStroke;
-            loc=glGetUniformLocation(program,"drawStroke");
-            #ifndef ANDROID
-                glProgramUniform1i(program,loc,drawStroke);
-            #else
-                glUniform1i(loc, drawStroke);
-            #endif
+            glUniform1i(glGetUniformLocation(program,"drawStroke"), drawStroke);
                 
         #ifndef USE_SDL
         case 'Z': case 'z':
@@ -414,25 +361,10 @@ int main(int argc, char *argv[])
     }
 
     glUseProgram(program);
-    loc = glGetUniformLocation(program, "drawFill");
-#ifndef ANDROID
-    glProgramUniform1i(program, loc, 1);
-#else
-    glUniform1i(loc, 1);
-#endif    
-    loc = glGetUniformLocation(program, "useBezier");
-#ifndef ANDROID
-    glProgramUniform1i(program, loc, 1);
-#else
-    glUniform1i(loc, 1);
-#endif
 
-    loc = glGetUniformLocation(program, "drawStroke");
-#ifndef ANDROID
-    glProgramUniform1i(program, loc, 1);
-#else
-    glUniform1i(loc, 1);
-#endif
+    glUniform1i(glGetUniformLocation(program, "drawFill"), 1);
+    glUniform1i(glGetUniformLocation(program, "useBezier"), 1);
+    glUniform1i(glGetUniformLocation(program, "drawStroke"), 1);
 
 #ifndef ANDROID
     glEnableClientState(GL_VERTEX_ARRAY); // Why don't they work like glEnable(A|B) did before? or am I dumb?
