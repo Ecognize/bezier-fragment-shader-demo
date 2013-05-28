@@ -14,7 +14,7 @@ void main (void)
         {
             gl_FragColor = vec4(1.0,1.0,1.0,1.0);  
         }
-        else if ((drawState<0 && dist>0) || (drawState>0 && dist<0))
+        else if ((drawState<0 && dist>0.0) || (drawState>0 && dist<0.0))
         {
             if (fillCutPart)
                 gl_FragColor = vec4(0.4,0.4,1.0,1.0);
