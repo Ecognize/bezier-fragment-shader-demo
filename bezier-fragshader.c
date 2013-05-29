@@ -189,7 +189,9 @@ void draw()
     camera();
     // Perhaps we don't need that recalculated each frame, but meh
     struct GLMatrix model=getGLRotateMatrix(M_PI/2.0,1.0,0.0,0.0);
-    model=getGLMatrixProduct(model,getGLTranslateMatrix(-450.0,-550.0,0.0));
+    model=getGLMatrixProduct(model,getGLRotateMatrix(M_PI/2.0,0.0,0.0,1.0));
+    model=getGLMatrixProduct(model,getGLTranslateMatrix(0.0,-150.0,0.0));
+//     model=getGLMatrixProduct(model,getGLTranslateMatrix(-450.0,-550.0,0.0));
     glUniformMatrix4fv(glGetUniformLocation(program,"modelMatrix"),1,0,model.data);
 
     glUniform1i(glGetUniformLocation(program,"drawState"), -1);

@@ -1,5 +1,16 @@
 #include "matrix-math.h"
 
+struct GLMatrix getGLIdentityMatrix()
+{
+    struct GLMatrix ret={
+        1,  0,  0,  0,
+        0,  1,  0,  0,
+        0,  0,  1,  0,
+        0,  0,  0,  1,
+    };
+    return ret;
+}
+
 // Probably there's code for that, but it's fast enough to type
 struct GLMatrix getGLMatrixProduct(struct GLMatrix b,struct GLMatrix a) // fugly hack, replacing A and B, TODO: investigate the math part
 {

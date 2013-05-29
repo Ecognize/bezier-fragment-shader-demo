@@ -25,6 +25,7 @@ struct GLMatrix
     GLfloat data[16];
 };
 
+struct GLMatrix getGLIdentityMatrix();
 struct GLMatrix getGLMatrixProduct(struct GLMatrix a,struct GLMatrix b);
 struct GLMatrix getGLTranslateMatrix(GLfloat dx,GLfloat dy,GLfloat dz);
 struct GLMatrix getGLRotateMatrix(GLfloat angle,GLfloat _x,GLfloat _y,GLfloat _z);
