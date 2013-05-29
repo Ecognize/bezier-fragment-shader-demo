@@ -266,6 +266,7 @@ void keyb(unsigned char key)
         #endif
             drawStroke=!drawStroke;
             glUniform1i(glGetUniformLocation(program,"drawStroke"), drawStroke);
+            break;
                 
         #ifndef USE_SDL
         case 'Z': case 'z':
