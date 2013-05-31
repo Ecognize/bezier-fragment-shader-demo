@@ -106,6 +106,11 @@ GLuint loadShader(char *path,GLenum shaderType)
     printf("Loading shader source: %s\n",buf);
 //     TODO: error handling
     FILE *fp=fopen(buf,"r");
+    if (!fp)
+    {
+        fprintf(stderr,"Can not open file: %s\n",buf);
+        return 0;
+    }
     fseek(fp,0,SEEK_END);
     GLint fsz=(GLint)ftell(fp);
     fseek(fp,0,SEEK_SET);
