@@ -3,12 +3,13 @@ uniform bool drawStroke;
 uniform bool fillCutPart;
 uniform bool useBezier;
 uniform int drawState;
+varying highp vec4 bezCoords;
 
 void main (void)  
 {
     if (useBezier || drawState==0)
     {
-        float dist=pow(gl_TexCoord[0].s,2)-gl_TexCoord[0].t;
+        highp float dist=pow(bezCoords.s,2.0)-bezCoords.t;
         // Make use of GreaterThan etc
         if (drawStroke && (abs(dist)<0.01))
         {

@@ -114,20 +114,20 @@ GLuint loadShader(char *path,GLenum shaderType)
     fseek(fp,0,SEEK_END);
     GLint fsz=(GLint)ftell(fp);
     fseek(fp,0,SEEK_SET);
-    GLchar *shText=(char*)malloc(sizeof(GLubyte)*fsz);
-    fread(shText,sizeof(GLubyte),(long)fsz,fp);
+    char *shText=(char*)malloc(sizeof(char)*fsz);
+    fread(shText,sizeof(char),(long)fsz,fp);
     fclose(fp);
 
     GLuint shader=glCreateShader(shaderType);
 
-    glShaderSource(shader,1,&shText,&fsz);
+    glShaderSource(shader,1,(const char**)&shText,&fsz);
     glCompileShader(shader);
 
     free(shText);
 
     GLint compiled;
 
-    glGetProgramiv(shader,GL_COMPILE_STATUS,&compiled);
+    glGetShaderiv(shader,GL_COMPILE_STATUS,&compiled);
 
     if (!compiled)
     {
@@ -156,6 +156,7 @@ void draw()
     // Primitive separation, done only once
     // Also, they don't get freed until exist, be sure NOT to copypaste this code anywhere
     static GLfloat *innerPrimitives=NULL, *outerPrimitives=NULL;
+    static GLfloat *innerBezier=NULL, *outerBezier=NULL;
     static int innerPrimitiveSz=0,outerPrimitiveSz=0;
     int i;
     
@@ -166,11 +167,23 @@ void draw()
             if (curveClasses[i]<0)
                 innerPrimitiveSz++;
         innerPrimitives=(GLfloat*)malloc(sizeof(GLfloat)*innerPrimitiveSz*6);
+        innerBezier=(GLfloat*)malloc(sizeof(GLfloat)*innerPrimitiveSz*7);
         for (i=0;i<vertArraySz;i++)
             if (curveClasses[i]<0)
             {
-                for (j=0;j<6;j++)    
+                for (j=0;j<6;j++)
+                {
                     innerPrimitives[fill*6+j]=vertices[i*6+j];
+                    switch (j)
+                    {
+                        case 0: innerBezier[fill*6+j]=0.0; break;
+                        case 1: innerBezier[fill*6+j]=0.0; break;
+                        case 2: innerBezier[fill*6+j]=0.5; break;
+                        case 3: innerBezier[fill*6+j]=0.0; break;
+                        case 4: innerBezier[fill*6+j]=1.0; break;
+                        case 5: innerBezier[fill*6+j]=1.0; break;
+                    }
+                }
                 fill++;
             }
     }
@@ -181,11 +194,23 @@ void draw()
             if (curveClasses[i]>0)
                 outerPrimitiveSz++;
         outerPrimitives=(GLfloat*)malloc(sizeof(GLfloat)*outerPrimitiveSz*6);
+        outerBezier=(GLfloat*)malloc(sizeof(GLfloat)*outerPrimitiveSz*6);
         for (i=0;i<vertArraySz;i++)
             if (curveClasses[i]>0)
             {
                 for (j=0;j<6;j++)    
+                {
                     outerPrimitives[fill*6+j]=vertices[i*6+j];
+                    switch (j)
+                    {
+                        case 0: outerBezier[fill*6+j]=0.0; break;
+                        case 1: outerBezier[fill*6+j]=0.0; break;
+                        case 2: outerBezier[fill*6+j]=0.5; break;
+                        case 3: outerBezier[fill*6+j]=0.0; break;
+                        case 4: outerBezier[fill*6+j]=1.0; break;
+                        case 5: outerBezier[fill*6+j]=1.0; break;
+                    }
+                }
                 fill++;
             }
     }
@@ -201,11 +226,12 @@ void draw()
 
     glUniform1i(glGetUniformLocation(program,"drawState"), -1);
     glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,innerPrimitives);
-    glDrawArrays(GL_TRIANGLES,0,innerPrimitiveSz*3);
-    
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,innerBezier);
+    glDrawArrays(GL_TRIANGLES,0,innerPrimitiveSz*3);    
    
     glUniform1i(glGetUniformLocation(program,"drawState"), 1);
     glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,outerPrimitives);
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,outerBezier);
     glDrawArrays(GL_TRIANGLES,0,outerPrimitiveSz*3);
     
 #ifndef USE_SDL
@@ -317,9 +343,14 @@ int main(int argc, char *argv[])
         perror("can't initialize SDL\n");
         return 1;
     }
-
+// TODO fullscreen + get screen size
+#ifndef ANDROID
     width = 700;
     height = 700;
+#else
+    width = 320;
+    height = 480;
+#endif
 
     window = SDL_CreateWindow("Bezier Fragment Shader Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 
@@ -365,6 +396,8 @@ int main(int argc, char *argv[])
     program = glCreateProgram();
     glAttachShader(program, fshader);
     glAttachShader(program, vshader);
+    glBindAttribLocation(program, 0, "vertexPos");
+    glBindAttribLocation(program, 1, "bezCoordsAttr");
     glLinkProgram(program);
 
     glGetProgramiv(program, GL_LINK_STATUS, &linked);
@@ -382,8 +415,8 @@ int main(int argc, char *argv[])
     glUniform1i(glGetUniformLocation(program, "drawStroke"), 1);
 
 #ifndef ANDROID
-    glEnableClientState(GL_VERTEX_ARRAY); // Why don't they work like glEnable(A|B) did before? or am I dumb?
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+//     glEnableClientState(GL_VERTEX_ARRAY); // Why don't they work like glEnable(A|B) did before? or am I dumb?
+//     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 #endif
 
     glEnableVertexAttribArray(0);
