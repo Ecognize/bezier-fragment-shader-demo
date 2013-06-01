@@ -327,6 +327,7 @@ void keyb(unsigned char key)
         case 'Z': case 'z':
         #else
         case SDL_SCANCODE_Z:
+        case SDL_SCANCODE_VOLUMEDOWN:
         #endif
             Camera.dist*= 1.1; break;
         
@@ -334,6 +335,7 @@ void keyb(unsigned char key)
         case 'X': case 'x':
         #else
         case SDL_SCANCODE_X:
+        case SDL_SCANCODE_VOLUMEUP:
         #endif
             Camera.dist*= 0.9; break;
         #ifndef USE_SDL
@@ -347,7 +349,7 @@ void keyb(unsigned char key)
 
 void size(int w, int h)
 {
-    report("resized! %d, %d\n", w, h);
+    report("Window resized: %d, %d\n", w, h);
     width = w; height = h;
     glViewport(0, 0, w, h);
 }
@@ -362,7 +364,7 @@ int main(int argc, char *argv[])
 #ifdef USE_SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        report("can't initialize SDL\n");
+        report("Can't initialize SDL\n");
         return 1;
     }
 // TODO fullscreen + get screen size
@@ -462,9 +464,12 @@ int main(int argc, char *argv[])
                 case SDL_KEYDOWN:
                     switch(event.key.keysym.sym)
                     {
+                        #ifdef __ANDROID__
+                        case SDLK_AC_SEARCH:
+                        #endif  
                         case SDLK_F1: performanceReport(); break;
                         
-                        #ifndef ADNROID
+                        #ifndef __ANDROID__
                             case SDLK_ESCAPE: running = 0;          break;
                         #else
                             case SDLK_AC_BACK: running = 0;         break;
@@ -486,8 +491,11 @@ int main(int argc, char *argv[])
                     if(event.motion.state == 1) motion(event.motion.xrel, event.motion.yrel);
                 break;
 
-                case SDL_WINDOWEVENT_RESIZED:
-                    size(event.window.data1, event.window.data2);
+                // Note, the first frame flickers, TODO workaround
+                // TODO: track the real sequence of WINDOWEVENT_ENTER and WINDOWEVENT_SIZE_CHANGED events 
+                case SDL_WINDOWEVENT:
+                    if (event.window.event==SDL_WINDOWEVENT_SIZE_CHANGED)
+                        size(event.window.data1, event.window.data2);
                 break;
 
                 // handle touch events here
