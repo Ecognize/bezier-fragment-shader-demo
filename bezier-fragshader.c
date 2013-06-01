@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <math.h>
 
 #ifdef USE_SDL
     #include <SDL_config.h>
     #include <SDL.h>
-    #ifdef ANDROID
+    #ifdef __ANDROID__
     #include <SDL_opengles2.h>
     #else
     #include <SDL_opengl.h>
@@ -16,6 +17,23 @@
         #include <windows.h> 
     #endif
     #include <GL/glut.h>
+#endif
+
+#ifdef __ANDROID__
+    #include <android/log.h>
+    void report(const char* format,...)
+    {
+        va_list varg;
+        va_start(varg,format);
+        __android_log_vprint(ANDROID_LOG_DEBUG,"BEZIERS",format,varg);
+    }
+#else
+    void report(const char* format,...)
+    {
+        va_list varg;
+        va_start(varg,format);
+        vprintf(format,varg);
+    }
 #endif
 
 #include "matrix-math.h"
@@ -51,7 +69,7 @@ void performanceReport()
 #else
     unsigned now=currenttime;
 #endif
-    printf("Performance report: %d frames in %d milliseconds.\nAverage fps: %.5f.\n",
+    report("Performance report: %d frames in %d milliseconds.\nAverage fps: %.5f.\n",
            frames,now-timemark,1000.0*(double)(frames)/((double)(now-timemark)));
     timemark=now;
     frames=0;
@@ -63,7 +81,7 @@ struct camera
     double alpha;
     double beta;
     double dist;
-} Camera = { M_PI/4, 0.0, 1500.0 };
+} Camera = { M_PI/4, 0.0, 1000.0 };
 
 #ifndef USE_SDL
 void mouse(int b,int s,int x,int y)
@@ -94,21 +112,25 @@ void motion(int x, int y)
 
 GLuint loadShader(char *path,GLenum shaderType)
 {
-    char buf[4096];
+    report("Loading shader source: %s\n",path);
+#ifdef __ANDROID__
+    SDL_RWops *file = SDL_RWFromFile(path, "r");
 
-
-#ifdef ANDROID
-    sprintf(buf,"%s",path);
+    if(file == NULL) report("Can not open file: %s\n", path);
+    SDL_RWseek(file,0,RW_SEEK_END);
+    GLint fsz=(GLint)SDL_RWtell(file);
+    SDL_RWseek(file,0,RW_SEEK_SET);
+    char *shText=(char*)malloc(sizeof(char)*fsz);
+    SDL_RWread(file, shText, (long)fsz, 1);
+    SDL_RWclose(file);
 #else
-    sprintf(buf,"%s/%s",DATADIR,path);
-#endif
-
-    printf("Loading shader source: %s\n",buf);
+    char buf[4096];
+    sprintf(buf,"%s/%s",DATADIR,path);    
 //     TODO: error handling
     FILE *fp=fopen(buf,"r");
     if (!fp)
     {
-        fprintf(stderr,"Can not open file: %s\n",buf);
+        report("Can not open file: %s\n",buf);
         return 0;
     }
     fseek(fp,0,SEEK_END);
@@ -117,7 +139,7 @@ GLuint loadShader(char *path,GLenum shaderType)
     char *shText=(char*)malloc(sizeof(char)*fsz);
     fread(shText,sizeof(char),(long)fsz,fp);
     fclose(fp);
-
+#endif
     GLuint shader=glCreateShader(shaderType);
 
     glShaderSource(shader,1,(const char**)&shText,&fsz);
@@ -135,7 +157,7 @@ GLuint loadShader(char *path,GLenum shaderType)
         GLsizei sz;
         glGetShaderInfoLog(shader,4096,&sz,buf);
         glDeleteShader(shader);
-        fprintf(stderr,"Can't compile the shader: %s\n",buf);
+        report("Can't compile the shader: %s\n",buf);
         return 0;
     }
 
@@ -325,13 +347,13 @@ void keyb(unsigned char key)
 
 void size(int w, int h)
 {
-    printf("resized! %d, %d\n", w, h);
+    report("resized! %d, %d\n", w, h);
     width = w; height = h;
     glViewport(0, 0, w, h);
 }
 
 
-#ifdef ANDROID
+#ifdef __ANDROID__
 int SDL_main(int argc, char *argv[])
 #else
 int main(int argc, char *argv[])
@@ -340,23 +362,26 @@ int main(int argc, char *argv[])
 #ifdef USE_SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        perror("can't initialize SDL\n");
+        report("can't initialize SDL\n");
         return 1;
     }
 // TODO fullscreen + get screen size
-#ifndef ANDROID
-    width = 700;
-    height = 700;
+#ifndef __ANDROID__
+    width=height=700;
 #else
-    width = 320;
-    height = 480;
+    width=320;
+    height=480;
+//     const SDL_VideoInfo* vinfo=SDL_GetVideoInfo();    
+//     width = vinfo->current_w;
+//     height = vinfo->current_h;
+//     report("Detected %dx%d resolution.\n",width,height);
 #endif
 
     window = SDL_CreateWindow("Bezier Fragment Shader Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 
     if(window == NULL)
     {
-        fprintf(stderr,"Can't create window: %s\n", SDL_GetError());
+        report("Can't create window: %s\n", SDL_GetError());
         return -1;
     }
 
@@ -364,7 +389,7 @@ int main(int argc, char *argv[])
 
     if(glcontext == NULL)
     {
-        fprintf(stderr,"Can't create context: %s\n", SDL_GetError());
+        report("Can't create context: %s\n", SDL_GetError());
         return -1;
     }
 
@@ -389,7 +414,7 @@ int main(int argc, char *argv[])
 
     if (!(fshader&&vshader))
     {
-        fprintf(stderr,"One of shaders failed, aborting.\n");
+        report("One of shaders failed, aborting.\n");
         return -1;
     }
 
@@ -404,7 +429,7 @@ int main(int argc, char *argv[])
 
     if (!linked)
     {
-        perror("Can't link the shader\n");
+        report("Can't link the shader\n");
         return -1;
     }
 
@@ -414,7 +439,7 @@ int main(int argc, char *argv[])
     glUniform1i(glGetUniformLocation(program, "useBezier"), 1);
     glUniform1i(glGetUniformLocation(program, "drawStroke"), 1);
 
-#ifndef ANDROID
+#ifndef __ANDROID__
 //     glEnableClientState(GL_VERTEX_ARRAY); // Why don't they work like glEnable(A|B) did before? or am I dumb?
 //     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 #endif
