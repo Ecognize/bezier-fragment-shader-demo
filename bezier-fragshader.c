@@ -164,6 +164,84 @@ GLuint loadShader(char *path,GLenum shaderType)
     return shader;
 }
 
+GLuint glbufs[4]; // TODO pack attributes and use stride
+                // WARNING: global scope is evil. never do this at home
+int innerPrimitiveSz=0,outerPrimitiveSz=0;
+                
+void createShapes()
+{
+    // Primitive separation, done only once
+    GLfloat *innerPrimitives=NULL, *outerPrimitives=NULL;
+    GLfloat *innerBezier=NULL, *outerBezier=NULL;
+    int i;
+
+    int fill=0; int j=0;
+    for (i=0;i<vertArraySz;i++)
+        if (curveClasses[i]<0)
+            innerPrimitiveSz++;
+    innerPrimitives=(GLfloat*)malloc(sizeof(GLfloat)*innerPrimitiveSz*6);
+    innerBezier=(GLfloat*)malloc(sizeof(GLfloat)*innerPrimitiveSz*7);
+    for (i=0;i<vertArraySz;i++)
+        if (curveClasses[i]<0)
+        {
+            for (j=0;j<6;j++)
+            {
+                innerPrimitives[fill*6+j]=vertices[i*6+j];
+                switch (j)
+                {
+                    case 0: innerBezier[fill*6+j]=0.0; break;
+                    case 1: innerBezier[fill*6+j]=0.0; break;
+                    case 2: innerBezier[fill*6+j]=0.5; break;
+                    case 3: innerBezier[fill*6+j]=0.0; break;
+                    case 4: innerBezier[fill*6+j]=1.0; break;
+                    case 5: innerBezier[fill*6+j]=1.0; break;
+                }
+            }
+            fill++;
+        }
+    
+    fill=0; j=0;
+    for (i=0;i<vertArraySz;i++)
+        if (curveClasses[i]>0)
+            outerPrimitiveSz++;
+    outerPrimitives=(GLfloat*)malloc(sizeof(GLfloat)*outerPrimitiveSz*6);
+    outerBezier=(GLfloat*)malloc(sizeof(GLfloat)*outerPrimitiveSz*6);
+    for (i=0;i<vertArraySz;i++)
+        if (curveClasses[i]>0)
+        {
+            for (j=0;j<6;j++)    
+            {
+                outerPrimitives[fill*6+j]=vertices[i*6+j];
+                switch (j)
+                {
+                    case 0: outerBezier[fill*6+j]=0.0; break;
+                    case 1: outerBezier[fill*6+j]=0.0; break;
+                    case 2: outerBezier[fill*6+j]=0.5; break;
+                    case 3: outerBezier[fill*6+j]=0.0; break;
+                    case 4: outerBezier[fill*6+j]=1.0; break;
+                    case 5: outerBezier[fill*6+j]=1.0; break;
+                }
+            }
+            fill++;
+        }
+    
+    
+    /* Putting the data into the buffers for easier access */
+    glGenBuffers(4,glbufs);
+    glBindBuffer(GL_ARRAY_BUFFER,glbufs[0]);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(GLfloat)*innerPrimitiveSz*6,innerPrimitives,GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER,glbufs[1]);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(GLfloat)*innerPrimitiveSz*6,innerBezier,GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER,glbufs[2]);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(GLfloat)*outerPrimitiveSz*6,outerPrimitives,GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER,glbufs[3]);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(GLfloat)*outerPrimitiveSz*6,outerBezier,GL_STATIC_DRAW);
+    
+    free(innerPrimitives); free(innerBezier);
+    free(outerPrimitives); free(outerBezier);
+    /* NB: we're not deleting the buffers. It's a demo anyway */
+}
+
 void camera()
 {
     struct GLMatrix proj=getGLPerspectiveMatrix(M_PI/4.0,(GLfloat)width/height,10.0,10000.0);
@@ -175,68 +253,6 @@ void camera()
 
 void draw()
 {
-    // Primitive separation, done only once
-    // Also, they don't get freed until exist, be sure NOT to copypaste this code anywhere
-    static GLfloat *innerPrimitives=NULL, *outerPrimitives=NULL;
-    static GLfloat *innerBezier=NULL, *outerBezier=NULL;
-    static int innerPrimitiveSz=0,outerPrimitiveSz=0;
-    int i;
-    
-    if (innerPrimitives==NULL)
-    {
-        int fill=0; int j=0;
-        for (i=0;i<vertArraySz;i++)
-            if (curveClasses[i]<0)
-                innerPrimitiveSz++;
-        innerPrimitives=(GLfloat*)malloc(sizeof(GLfloat)*innerPrimitiveSz*6);
-        innerBezier=(GLfloat*)malloc(sizeof(GLfloat)*innerPrimitiveSz*7);
-        for (i=0;i<vertArraySz;i++)
-            if (curveClasses[i]<0)
-            {
-                for (j=0;j<6;j++)
-                {
-                    innerPrimitives[fill*6+j]=vertices[i*6+j];
-                    switch (j)
-                    {
-                        case 0: innerBezier[fill*6+j]=0.0; break;
-                        case 1: innerBezier[fill*6+j]=0.0; break;
-                        case 2: innerBezier[fill*6+j]=0.5; break;
-                        case 3: innerBezier[fill*6+j]=0.0; break;
-                        case 4: innerBezier[fill*6+j]=1.0; break;
-                        case 5: innerBezier[fill*6+j]=1.0; break;
-                    }
-                }
-                fill++;
-            }
-    }
-    if (outerPrimitives==NULL)
-    {
-        int fill=0; int j=0;
-        for (i=0;i<vertArraySz;i++)
-            if (curveClasses[i]>0)
-                outerPrimitiveSz++;
-        outerPrimitives=(GLfloat*)malloc(sizeof(GLfloat)*outerPrimitiveSz*6);
-        outerBezier=(GLfloat*)malloc(sizeof(GLfloat)*outerPrimitiveSz*6);
-        for (i=0;i<vertArraySz;i++)
-            if (curveClasses[i]>0)
-            {
-                for (j=0;j<6;j++)    
-                {
-                    outerPrimitives[fill*6+j]=vertices[i*6+j];
-                    switch (j)
-                    {
-                        case 0: outerBezier[fill*6+j]=0.0; break;
-                        case 1: outerBezier[fill*6+j]=0.0; break;
-                        case 2: outerBezier[fill*6+j]=0.5; break;
-                        case 3: outerBezier[fill*6+j]=0.0; break;
-                        case 4: outerBezier[fill*6+j]=1.0; break;
-                        case 5: outerBezier[fill*6+j]=1.0; break;
-                    }
-                }
-                fill++;
-            }
-    }
-    
     glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
     camera();
     // Perhaps we don't need that recalculated each frame, but meh
@@ -245,15 +261,18 @@ void draw()
     model=getGLMatrixProduct(model,getGLTranslateMatrix(0.0,-150.0,0.0));
 //     model=getGLMatrixProduct(model,getGLTranslateMatrix(-450.0,-550.0,0.0));
     glUniformMatrix4fv(glGetUniformLocation(program,"modelMatrix"),1,0,model.data);
-
     glUniform1i(glGetUniformLocation(program,"drawState"), -1);
-    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,innerPrimitives);
-    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,innerBezier);
+    glBindBuffer(GL_ARRAY_BUFFER,glbufs[0]);
+    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,0);
+    glBindBuffer(GL_ARRAY_BUFFER,glbufs[1]);
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,0);
     glDrawArrays(GL_TRIANGLES,0,innerPrimitiveSz*3);    
    
     glUniform1i(glGetUniformLocation(program,"drawState"), 1);
-    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,outerPrimitives);
-    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,outerBezier);
+    glBindBuffer(GL_ARRAY_BUFFER,glbufs[2]);
+    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,0);
+    glBindBuffer(GL_ARRAY_BUFFER,glbufs[3]);
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,0);
     glDrawArrays(GL_TRIANGLES,0,outerPrimitiveSz*3);
     
 #ifndef USE_SDL
@@ -448,6 +467,7 @@ int main(int argc, char *argv[])
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+    createShapes();
     
 #ifdef USE_SDL
     int running = 1;
