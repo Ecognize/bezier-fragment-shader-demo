@@ -293,6 +293,7 @@ void keyb(unsigned char key)
         #ifndef USE_SDL
         case 'P': case 'p':
         #else
+        case SDL_SCANCODE_MENU:
         case SDL_SCANCODE_P:
         #endif
             useBezier=!useBezier;
