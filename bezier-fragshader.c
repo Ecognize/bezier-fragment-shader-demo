@@ -241,13 +241,13 @@ void draw()
     if (frames==0) camera();
     glUniform1i(glGetUniformLocation(program,"drawState"), 1);
     glBindBuffer(GL_ARRAY_BUFFER,glbuf);
-    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(GLfloat)*4,0);
-    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(GLfloat)*4,sizeof(GLfloat)*2);
+    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(GLfloat)*4,(const GLvoid *)(0));
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(GLfloat)*4,(const GLvoid *)(sizeof(GLfloat)*2));
     glDrawArrays(GL_TRIANGLES,0,innerPrimitiveSz*3);    
    
     glUniform1i(glGetUniformLocation(program,"drawState"), -1);
-    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(GLfloat)*4,sizeof(GLfloat)*innerPrimitiveSz*6*2);
-    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(GLfloat)*4,sizeof(GLfloat)*(innerPrimitiveSz*6*2+2));
+    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(GLfloat)*4,(const GLvoid *)(sizeof(GLfloat)*innerPrimitiveSz*6*2));
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(GLfloat)*4,(const GLvoid *)(sizeof(GLfloat)*(innerPrimitiveSz*6*2+2)));
     glDrawArrays(GL_TRIANGLES,0,outerPrimitiveSz*3);
     
 #ifndef USE_SDL
