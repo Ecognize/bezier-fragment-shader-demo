@@ -62,6 +62,27 @@ void timer(int value)
 }
 #endif
 
+struct camera
+{
+    double alpha;
+    double beta;
+    double dist;
+} Camera = { M_PI/4, 0.0, 1000.0 };
+
+void camera()
+{
+    struct GLMatrix proj=getGLPerspectiveMatrix(M_PI/4.0,(GLfloat)width/height,10.0,10000.0);
+    struct GLMatrix modelview=getGLRotateMatrix(M_PI/2.0,1.0,0.0,0.0);
+    modelview=getGLMatrixProduct(modelview,getGLRotateMatrix(M_PI/2.0,0.0,0.0,1.0));
+    modelview=getGLMatrixProduct(modelview,getGLTranslateMatrix(0.0,-150.0,0.0));
+    
+    proj=getGLMatrixProduct(proj,getGLLookAtMatrix(
+        Camera.dist*cos(Camera.alpha)*cos(Camera.beta),Camera.dist*sin(Camera.alpha),Camera.dist*cos(Camera.alpha)*sin(Camera.beta),
+        0.0,0.0,0.0,0.0,cos(Camera.alpha)>0?1.0:-1.0,0.0));
+    proj=getGLMatrixProduct(proj,modelview);    
+    glUniformMatrix4fv(glGetUniformLocation(program,"projModelMatrix"),1,0,proj.data);
+}
+
 void performanceReport()
 {
 #ifdef USE_SDL
@@ -75,20 +96,13 @@ void performanceReport()
     frames=0;
 }
 
-
-struct camera
-{
-    double alpha;
-    double beta;
-    double dist;
-} Camera = { M_PI/4, 0.0, 1000.0 };
-
 #ifndef USE_SDL
 void mouse(int b,int s,int x,int y)
 {
     if (b==3 || b==4)
     {
         Camera.dist*= (b==4)? 1.1 : 0.9;
+        camera();
     }
 }
 #endif
@@ -108,6 +122,7 @@ void motion(int x, int y)
     if (dx > 0) Camera.beta -= M_PI * abs(dx) / 64;
     if (dy < 0) Camera.alpha -= M_PI * abs(dy) / 64;
     if (dy > 0) Camera.alpha += M_PI * abs(dy) / 64;
+    camera();
 }
 
 GLuint loadShader(char *path,GLenum shaderType)
@@ -220,25 +235,10 @@ void createShapes()
     /* NB: we're not deleting the buffers. It's a demo anyway */
 }
 
-void camera()
-{
-    struct GLMatrix proj=getGLPerspectiveMatrix(M_PI/4.0,(GLfloat)width/height,10.0,10000.0);
-    proj=getGLMatrixProduct(proj,getGLLookAtMatrix(
-        Camera.dist*cos(Camera.alpha)*cos(Camera.beta),Camera.dist*sin(Camera.alpha),Camera.dist*cos(Camera.alpha)*sin(Camera.beta),
-        0.0,0.0,0.0,0.0,cos(Camera.alpha)>0?1.0:-1.0,0.0));
-    glUniformMatrix4fv(glGetUniformLocation(program,"projMatrix"),1,0,proj.data);
-}
-
 void draw()
 {
     glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
-    camera();
-    // Perhaps we don't need that recalculated each frame, but meh
-    struct GLMatrix model=getGLRotateMatrix(M_PI/2.0,1.0,0.0,0.0);
-    model=getGLMatrixProduct(model,getGLRotateMatrix(M_PI/2.0,0.0,0.0,1.0));
-    model=getGLMatrixProduct(model,getGLTranslateMatrix(0.0,-150.0,0.0));
-//     model=getGLMatrixProduct(model,getGLTranslateMatrix(-450.0,-550.0,0.0));
-    glUniformMatrix4fv(glGetUniformLocation(program,"modelMatrix"),1,0,model.data);
+    if (frames==0) camera();
     glUniform1i(glGetUniformLocation(program,"drawState"), 1);
     glBindBuffer(GL_ARRAY_BUFFER,glbuf);
     glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(GLfloat)*4,0);
@@ -263,10 +263,10 @@ void keybs(int key,int mx,int my)
 {
     switch (key)
     {
-    case GLUT_KEY_LEFT: Camera.beta+=M_PI/36; break;
-    case GLUT_KEY_RIGHT: Camera.beta-=M_PI/36; break;
-    case GLUT_KEY_UP: Camera.alpha+=M_PI/36; break;
-    case GLUT_KEY_DOWN: Camera.alpha-=M_PI/36; break;
+    case GLUT_KEY_LEFT: Camera.beta+=M_PI/36; camera(); break;
+    case GLUT_KEY_RIGHT: Camera.beta-=M_PI/36; camera(); break;
+    case GLUT_KEY_UP: Camera.alpha+=M_PI/36; camera(); break;
+    case GLUT_KEY_DOWN: Camera.alpha-=M_PI/36; camera(); break;
     case GLUT_KEY_F1: performanceReport(); break;
     }
 }
@@ -324,7 +324,7 @@ void keyb(unsigned char key)
         case SDL_SCANCODE_Z:
         case SDL_SCANCODE_VOLUMEDOWN:
         #endif
-            Camera.dist*= 1.1; break;
+            Camera.dist*= 1.1; camera(); break;
         
         #ifndef USE_SDL
         case 'X': case 'x':
@@ -332,7 +332,7 @@ void keyb(unsigned char key)
         case SDL_SCANCODE_X:
         case SDL_SCANCODE_VOLUMEUP:
         #endif
-            Camera.dist*= 0.9; break;
+            Camera.dist*= 0.9; camera(); break;
         #ifndef USE_SDL
         case 27: // Escape
             performanceReport();
@@ -471,16 +471,17 @@ int main(int argc, char *argv[])
                             case SDLK_AC_BACK: running = 0;         break;
                         #endif
 
-                        case SDLK_LEFT:   Camera.beta += M_PI / 36; break;
-                        case SDLK_RIGHT:  Camera.beta -= M_PI / 36; break;
-                        case SDLK_UP:    Camera.alpha += M_PI / 36; break;
-                        case SDLK_DOWN:  Camera.alpha -= M_PI / 36; break;
+                        case SDLK_LEFT:   Camera.beta += M_PI / 36; camera(); break;
+                        case SDLK_RIGHT:  Camera.beta -= M_PI / 36; camera(); break;
+                        case SDLK_UP:    Camera.alpha += M_PI / 36; camera(); break;
+                        case SDLK_DOWN:  Camera.alpha -= M_PI / 36; camera(); break;
                         default: keyb(event.key.keysym.scancode);   break;
                     }
                 break;
 
                 case SDL_MOUSEWHEEL:
                     Camera.dist*= (event.wheel.y < 0)? 1.1 : 0.9;
+                    camera();
                 break;
 
                 case SDL_MOUSEMOTION:
@@ -492,6 +493,7 @@ int main(int argc, char *argv[])
                 case SDL_WINDOWEVENT:
                     if (event.window.event==SDL_WINDOWEVENT_SIZE_CHANGED)
                         size(event.window.data1, event.window.data2);
+                    camera();
                 break;
 
                 // handle touch events here
