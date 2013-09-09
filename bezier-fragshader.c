@@ -157,7 +157,22 @@ GLuint loadShader(char *path,GLenum shaderType)
 #endif
     GLuint shader=glCreateShader(shaderType);
 
-    glShaderSource(shader,1,(const char**)&shText,&fsz);
+#ifdef __ANDROID__
+    char *preamble="#version 100\n";
+    report("Using GLES preamble.\n");
+#else
+    char *preamble="#version 120\n"             /* TODO: Should we support earlier ones? */
+                   "#if __VERSION__ <= 150\n"   /* TODO: find out which version exactly the ES qualifiers were backported */
+                   "    #define highp\n"
+                   "    #define mediump\n"
+                   "    #define lowp\n"
+                   "#endif\n";
+    report("Using GL preamble.\n");
+#endif
+    char *sources[]={preamble,shText};
+    GLint lengths[]={strlen(preamble),fsz};
+
+    glShaderSource(shader,2,sources,lengths);
     glCompileShader(shader);
 
     free(shText);
