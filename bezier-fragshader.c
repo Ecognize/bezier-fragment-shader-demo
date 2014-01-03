@@ -4,20 +4,7 @@
 #include <stdarg.h>
 #include <math.h>
 
-#ifdef USE_SDL
-    #include <SDL_config.h>
-    #include <SDL.h>
-    #ifdef __ANDROID__
-    #include <SDL_opengles2.h>
-    #else
-    #include <SDL_opengl.h>
-    #endif
-#else
-    #ifdef _WIN32
-        #include <windows.h> 
-    #endif
-    #include <GL/glut.h>
-#endif
+#include "graphlibs.h"
 
 #ifdef __ANDROID__
     #include <android/log.h>

@@ -7,7 +7,7 @@ if (GLUT_FOUND)
     # TODO make an override
     message("GLUT found, building a non-SDL version")
     set(AUXLIBS ${GLUT_LIBRARIES})
-    include_directories(${GLUT_INCLUDE_DIR}})
+    include_directories(${GLUT_INCLUDE_DIR})
 else()
     message("No GLUT found, using SDL.")
     set(AUXLIBS ${SDL2-static} m dl pthread SDL2-static)
